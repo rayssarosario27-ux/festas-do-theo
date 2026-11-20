@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Festas do Théo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/theo-photo.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎂</text></svg>">
+</head>
+<body>
+
+<nav class="nav solid" id="nav">
+  <a class="wordmark" href="catalogo.html">FESTAS DO THÉO</a>
+</nav>
+
+<header class="hero2">
+  <div class="hero-bg theo-photo-bg"></div>
+  <div class="hero-shade"></div>
+  <div class="hero-content">
+    <p class="kick">Festa de aniversário</p>
+    <h1 class="show-title" id="title">THÉO: 4 ANOS</h1>
+    <div class="meta">
+      <span class="match" id="metaDate">13 de dezembro de 2026</span>
+      <span class="badge-l">L</span>
+      <span id="metaTheme">Vingadores</span>
+    </div>
+    <p class="synopsis" id="synopsis"></p>
+    <div class="btns">
+      <a class="btn-play" href="#videos" id="btnVideos">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 3.8v16.4c0 .9 1 1.5 1.8 1L21 12.9c.8-.5.8-1.6 0-2.1L7.8 2.8C7 2.3 6 2.9 6 3.8z"/></svg>
+        Ver vídeos
+      </a>
+      <a class="btn-gray" id="inviteBtn" href="#" target="_blank" rel="noopener">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M3 11h18M12 7v14M12 7s-1.5-4-4.5-4S4 6.5 6 7h6zm0 0s1.5-4 4.5-4S20 6.5 18 7h-6z"/></svg>
+        Abrir o convite
+      </a>
+    </div>
+  </div>
+</header>
+
+<main class="rows">
+  <section class="row" id="rowPhotos" hidden>
+    <div class="row-head"><span class="row-title">Fotos</span></div>
+    <div class="row-scroll" id="scrollPhotos"></div>
+  </section>
+
+  <section class="row" id="rowVideos" hidden>
+    <a id="videos"></a>
+    <div class="row-head"><span class="row-title">Vídeos</span></div>
+    <div class="row-scroll" id="scrollVideos"></div>
+  </section>
+
+  <section class="coming" id="coming" hidden>
+    <p class="soon-kick">Estreia em breve</p>
+    <h2 class="soon-big">FOTOS E VÍDEOS</h2>
+    <p class="soon-date" id="soonDate"></p>
+    <div class="cd" id="cd" hidden>
+      <div><b id="cdD">--</b><span>dias</span></div>
+      <div><b id="cdH">--</b><span>horas</span></div>
+      <div><b id="cdM">--</b><span>min</span></div>
+      <div><b id="cdS">--</b><span>seg</span></div>
+    </div>
+    <p class="note" id="comingNote"></p>
+  </section>
+</main>
+
+<footer>
+  Guardado para sempre na conta da família.
+</footer>
+
+<div class="lightbox" id="lb">
+  <a class="lb-close lb-dl" id="lbDl" href="#" target="_blank" rel="noopener" title="Baixar" aria-label="Baixar">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 20h16"/></svg>
+  </a>
+  <button class="lb-close" id="lbClose" aria-label="Fechar">✕</button>
+  <button class="lb-nav lb-prev" id="lbPrev" aria-label="Anterior">‹</button>
+  <div class="lb-media" id="lbMedia"></div>
+  <button class="lb-nav lb-next" id="lbNext" aria-label="Próximo">›</button>
+  <div class="lb-count" id="lbCount"></div>
+</div>
+
+<script src="assets/api.js"></script>
+<script>
+if (new URLSearchParams(location.search).has('flat')) document.querySelector('.hero2').style.display = 'none';
+
+const ano = new URLSearchParams(location.search).get('ano') || '4';
+let PARTY_AT = null;
+let cdTimer = null;
+
+function tickCd() {
+  if (!PARTY_AT) return;
+  let d = Math.max(0, PARTY_AT - Date.now());
+  const days = Math.floor(d / 86400000); d -= days * 86400000;
+  const h = Math.floor(d / 3600000); d -= h * 3600000;
+  const m = Math.floor(d / 60000); d -= m * 60000;
+  const s = Math.floor(d / 1000);
+  document.getElementById('cdD').textContent = days;
+  document.getElementById('cdH').textContent = String(h).padStart(2, '0');
+  document.getElementById('cdM').textContent = String(m).padStart(2, '0');
+  document.getElementById('cdS').textContent = String(s).padStart(2, '0');
+}
+
+function applyYear(Y, mainCover) {
+  const cover = Y.coverFileId || mainCover || '';
+  if (cover) document.querySelector('.hero-bg').style.backgroundImage = "url('" + coverUrl(cover, 2048) + "')";
+  document.title = 'Théo: ' + Y.num + ' anos • Festas do Théo';
+  document.getElementById('title').textContent = 'THÉO: ' + Y.num + ' ANOS';
+  if (Y.theme) document.getElementById('metaTheme').textContent = Y.theme;
+  if (Y.date) document.getElementById('metaDate').textContent = Y.date;
+  const parts = [];
+  if (Y.place) parts.push(Y.place + '.');
+  parts.push(Y.emptyText || YEARS['4'].emptyText);
+  document.getElementById('synopsis').textContent = parts.join(' ');
+  const inviteBtn = document.getElementById('inviteBtn');
+  if (Y.invite) { inviteBtn.href = Y.invite; } else { inviteBtn.style.display = 'none'; }
+  document.getElementById('soonDate').textContent = Y.date || '';
+  document.getElementById('comingNote').textContent = Y.emptyText || YEARS['4'].emptyText;
+  if (Y.partyAt) {
+    PARTY_AT = new Date(Y.partyAt).getTime();
+    if (!isNaN(PARTY_AT)) {
+      document.getElementById('cd').hidden = false;
+      tickCd();
+      cdTimer = setInterval(tickCd, 1000);
+    }
+  }
+}
+
+let lbList = [];
+let lbIndex = 0;
+
+function isNew(created) {
+  return (Date.now() - new Date(created).getTime()) < 14 * 24 * 3600 * 1000;
+}
+
+function cardFor(it, kind, list, idx) {
+  const el = document.createElement('div');
+  el.className = 'card';
+  const img = document.createElement('img');
+  img.loading = 'lazy';
+  img.src = it.thumb.replace('w1600', 'w800');
+  img.alt = it.name;
+  el.appendChild(img);
+  if (isNew(it.created)) {
+    const b = document.createElement('span');
+    b.className = 'badge-new';
+    b.textContent = 'NOVO';
+    el.appendChild(b);
+  }
+  if (kind === 'video') {
+    const p = document.createElement('div');
+    p.className = 'pplay';
+    p.innerHTML = '<span><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M6 3.8v16.4c0 .9 1 1.5 1.8 1L21 12.9c.8-.5.8-1.6 0-2.1L7.8 2.8C7 2.3 6 2.9 6 3.8z"/></svg></span>';
+    el.appendChild(p);
+  }
+  const g = document.createElement('div');
+  g.className = 'c-grad';
+  el.appendChild(g);
+  el.addEventListener('click', () => openLb(list, idx));
+  return el;
+}
+
+function openLb(list, idx) {
+  lbList = list;
+  lbIndex = idx;
+  renderLb();
+  document.getElementById('lb').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLb() {
+  document.getElementById('lb').classList.remove('open');
+  document.getElementById('lbMedia').innerHTML = '';
+  document.body.style.overflow = '';
+}
+function stepLb(d) {
+  lbIndex = (lbIndex + d + lbList.length) % lbList.length;
+  renderLb();
+}
+function renderLb() {
+  const it = lbList[lbIndex];
+  const media = document.getElementById('lbMedia');
+  media.innerHTML = '';
+  if (it.kind === 'video') {
+    const f = document.createElement('iframe');
+    f.src = it.preview;
+    f.allow = 'autoplay; fullscreen';
+    f.allowFullscreen = true;
+    media.appendChild(f);
+  } else {
+    const img = document.createElement('img');
+    img.src = it.thumb.replace('w1600', 'w2048');
+    img.alt = it.name;
+    media.appendChild(img);
+  }
+  document.getElementById('lbCount').textContent = (lbIndex + 1) + ' / ' + lbList.length;
+  document.getElementById('lbDl').href = it.download || '#';
+}
+
+document.getElementById('lbClose').addEventListener('click', closeLb);
+document.getElementById('lbPrev').addEventListener('click', () => stepLb(-1));
+document.getElementById('lbNext').addEventListener('click', () => stepLb(1));
+document.getElementById('lb').addEventListener('click', (e) => { if (e.target.id === 'lb') closeLb(); });
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('lb').classList.contains('open')) return;
+  if (e.key === 'Escape') closeLb();
+  if (e.key === 'ArrowLeft') stepLb(-1);
+  if (e.key === 'ArrowRight') stepLb(1);
+});
+
+async function init() {
+  const res = await apiYears();
+  const cfg = res.years;
+  applyYear(cfg[ano] || YEARS[ano] || YEARS['4'], res.mainCover);
+
+  let data = { photos: [], videos: [] };
+  try { data = await apiGet({ action: 'list', ano: ano }); } catch (e) {}
+  const photos = (data.photos || []).map((p) => Object.assign({ kind: 'photo' }, p));
+  const videos = (data.videos || []).map((v) => Object.assign({ kind: 'video' }, v));
+  const coming = document.getElementById('coming');
+  if (photos.length) {
+    document.getElementById('rowPhotos').hidden = false;
+    photos.forEach((p, i) => document.getElementById('scrollPhotos').appendChild(cardFor(p, 'photo', photos, i)));
+  }
+  if (videos.length) {
+    document.getElementById('rowVideos').hidden = false;
+    videos.forEach((v, i) => document.getElementById('scrollVideos').appendChild(cardFor(v, 'video', videos, i)));
+  }
+  coming.hidden = photos.length > 0 || videos.length > 0;
+  document.getElementById('btnVideos').style.display = videos.length ? '' : 'none';
+}
+init();
+</script>
+</body>
+</html>
