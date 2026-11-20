@@ -10,7 +10,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/theo-photo.css">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎂</text></svg>">
+<meta name="theme-color" content="#e50914">
+<link rel="manifest" href="manifest-admin.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-admin-192.png">
+<link rel="icon" type="image/png" href="assets/favicon.png">
 </head>
 <body>
 
@@ -37,8 +40,42 @@
     <button class="btn btn-ghost" id="logoutBtn" style="width:auto;padding:9px 18px;font-size:13px">Sair</button>
   </div>
 
+  <div class="admin-tabs">
+    <button class="admin-tab on" id="tabMedia">Fotos e vídeos</button>
+    <button class="admin-tab" id="tabPeople">Pessoas <span class="tab-badge" id="peopleBadge" hidden></span></button>
+  </div>
+
+  <div id="mediaView">
+
   <div class="year-row" id="yearRow">
     <button class="year-add" id="addYearBtn">+ Novo ano</button>
+    <button class="year-add album-add" id="addAlbumBtn">+ Novo álbum</button>
+  </div>
+
+  <div class="newyear" id="newAlbumForm" hidden>
+    <div class="field">
+      <label for="naName">Nome do álbum <span class="req">(obrigatório)</span></label>
+      <input type="text" id="naName" placeholder="Ex.: Viagem, Natal 2026, Primeiras vezes">
+    </div>
+    <div class="field">
+      <label for="naDesc">Descrição (opcional)</label>
+      <input type="text" id="naDesc" placeholder="Ex.: Nossa primeira viagem em família">
+    </div>
+    <button class="btn" id="naCreate">Criar álbum</button>
+    <div class="login-error" id="naError"></div>
+  </div>
+
+  <div class="newyear" id="editAlbumForm" hidden>
+    <div class="field">
+      <label for="eaName">Nome do álbum</label>
+      <input type="text" id="eaName">
+    </div>
+    <div class="field">
+      <label for="eaDesc">Descrição</label>
+      <input type="text" id="eaDesc">
+    </div>
+    <button class="btn" id="eaSave">Salvar álbum</button>
+    <div class="login-error" id="eaError"></div>
   </div>
 
   <div class="newyear" id="newYearForm" hidden>
@@ -120,14 +157,24 @@
     Tudo que é enviado por aqui fica guardado na pasta <b>Festas do Théo</b> do Google Drive da família, para sempre.
     O site apenas mostra o que está lá. Apagar aqui manda o arquivo para a lixeira do Drive (dá para recuperar por 30 dias).
   </p>
+
+  </div><!-- /mediaView -->
+
+  <div id="peopleView" hidden>
+    <p class="people-intro">Quem pediu acesso ao álbum. <b>Liberar</b> deixa a pessoa entrar; <b>bloquear</b> tira o acesso na hora.</p>
+    <div id="peopleList"></div>
+  </div>
 </div>
 
 <script src="assets/api.js"></script>
 <script>
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 const PW_KEY = 'ft_admin_pw';
 let pw = sessionStorage.getItem(PW_KEY) || '';
 let currentYear = 4;
+let currentAlbum = ''; // slug do álbum livre selecionado ('' = modo anos)
 let yearFolders = [];
+let albumsCfg = {};
 
 const $ = (id) => document.getElementById(id);
 
@@ -167,6 +214,8 @@ function showPanel() {
   loadStats();
   loadFiles();
   loadCovers();
+  loadAlbums().then(renderYearChips);
+  loadPeople(true);
 }
 
 $('loginBtn').addEventListener('click', () => tryLogin(false));
@@ -182,12 +231,81 @@ function renderYearChips() {
   row.querySelectorAll('.year-chip').forEach((c) => c.remove());
   yearFolders.forEach((y) => {
     const b = document.createElement('button');
-    b.className = 'year-chip' + (y.num === currentYear ? ' on' : '');
+    b.className = 'year-chip' + (!currentAlbum && y.num === currentYear ? ' on' : '');
     b.textContent = y.label;
-    b.addEventListener('click', () => { currentYear = y.num; renderYearChips(); loadFiles(); });
+    b.addEventListener('click', () => { currentYear = y.num; currentAlbum = ''; renderYearChips(); renderAlbumEdit(); loadFiles(); });
+    row.insertBefore(b, $('addYearBtn'));
+  });
+  Object.values(albumsCfg).sort((a, b) => (a.criadoEm < b.criadoEm ? -1 : 1)).forEach((a) => {
+    const b = document.createElement('button');
+    b.className = 'year-chip album-chip' + (currentAlbum === a.slug ? ' on' : '');
+    b.textContent = a.nome;
+    b.addEventListener('click', () => { currentAlbum = a.slug; renderYearChips(); renderAlbumEdit(); loadFiles(); loadCovers(); });
     row.insertBefore(b, $('addYearBtn'));
   });
 }
+
+$('addAlbumBtn').addEventListener('click', () => {
+  const form = $('newAlbumForm');
+  form.hidden = !form.hidden;
+  $('editAlbumForm').hidden = true;
+  if (!form.hidden) $('naName').focus();
+});
+
+$('naCreate').addEventListener('click', async () => {
+  $('naError').textContent = '';
+  const name = $('naName').value.trim();
+  const desc = $('naDesc').value.trim();
+  if (name.length < 2) { $('naError').textContent = 'Digite o nome do álbum.'; return; }
+  $('naCreate').disabled = true;
+  $('naCreate').textContent = 'Criando...';
+  const r = await apiPost({ action: 'createAlbum', password: pw, name: name, desc: desc });
+  $('naCreate').disabled = false;
+  $('naCreate').textContent = 'Criar álbum';
+  if (r.ok) {
+    $('newAlbumForm').hidden = true;
+    $('naName').value = ''; $('naDesc').value = '';
+    currentAlbum = r.slug;
+    await loadAlbums();
+    renderYearChips();
+    renderAlbumEdit();
+    loadFiles();
+    loadCovers();
+  } else {
+    $('naError').textContent = r.error || 'Não consegui criar. Tenta de novo.';
+  }
+});
+
+async function loadAlbums() {
+  try {
+    const r = await apiGet({ action: 'albums' });
+    if (r.ok) albumsCfg = r.albums || {};
+  } catch (e) {}
+}
+
+function renderAlbumEdit() {
+  const form = $('editAlbumForm');
+  if (!currentAlbum || !albumsCfg[currentAlbum]) { form.hidden = true; return; }
+  form.hidden = false;
+  $('eaName').value = albumsCfg[currentAlbum].nome || '';
+  $('eaDesc').value = albumsCfg[currentAlbum].desc || '';
+}
+
+$('eaSave').addEventListener('click', async () => {
+  $('eaError').textContent = '';
+  $('eaSave').disabled = true;
+  $('eaSave').textContent = 'Salvando...';
+  const r = await apiPost({ action: 'updateAlbum', password: pw, slug: currentAlbum, name: $('eaName').value, desc: $('eaDesc').value });
+  $('eaSave').disabled = false;
+  $('eaSave').textContent = 'Salvar álbum';
+  if (r.ok) {
+    await loadAlbums();
+    renderYearChips();
+    renderAlbumEdit();
+  } else {
+    $('eaError').textContent = r.error || 'Não consegui salvar.';
+  }
+});
 
 $('addYearBtn').addEventListener('click', () => {
   const form = $('newYearForm');
@@ -242,9 +360,9 @@ async function loadCovers() {
 }
 
 function renderCovers() {
-  const y = yearsCfg[String(currentYear)];
+  const y = currentAlbum ? albumsCfg[currentAlbum] : yearsCfg[String(currentYear)];
   const yp = $('coverYearPreview');
-  $('coverYearLabel').textContent = currentYear + ' anos';
+  $('coverYearLabel').textContent = currentAlbum ? ('álbum ' + (albumsCfg[currentAlbum] || {}).nome) : (currentYear + ' anos');
   if (y && y.coverFileId) {
     yp.style.backgroundImage = "url('" + coverUrl(y.coverFileId, 800) + "')";
     yp.classList.add('has');
@@ -281,8 +399,10 @@ $('coverInput').addEventListener('change', async () => {
   try {
     coverStatus('enviando capa...');
     const id = await uploadFile(f, (p) => coverStatus('enviando capa... ' + p + '%'));
-    const action = coverTarget === 'year' ? 'setCover' : 'setMainCover';
-    const r = await apiPost({ action: action, password: pw, ano: String(currentYear), fileId: id });
+    let r;
+    if (coverTarget === 'main') r = await apiPost({ action: 'setMainCover', password: pw, fileId: id });
+    else if (currentAlbum) r = await apiPost({ action: 'updateAlbum', password: pw, slug: currentAlbum, coverFileId: id });
+    else r = await apiPost({ action: 'setCover', password: pw, ano: String(currentYear), fileId: id });
     if (!r.ok) throw new Error('falha');
     coverStatus('capa atualizada', 'done');
     loadCovers();
@@ -300,10 +420,12 @@ $('pickerClose').addEventListener('click', () => { $('picker').hidden = true; })
 async function openPicker(target) {
   pickerTarget = target;
   $('picker').hidden = false;
-  $('pickerTitle').textContent = target === 'year' ? 'Capa do ano: ' + currentYear + ' anos' : 'Capa principal do site';
+  $('pickerTitle').textContent = target === 'main' ? 'Capa principal do site' : (currentAlbum ? 'Capa do álbum ' + (albumsCfg[currentAlbum] || {}).nome : 'Capa do ano: ' + currentYear + ' anos');
   const grid = $('pickerGrid');
   grid.innerHTML = '<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Carregando fotos...</p>';
-  const r = await apiGet({ action: 'list', ano: String(currentYear) });
+  const r = currentAlbum
+    ? await apiGet({ action: 'list', album: currentAlbum })
+    : await apiGet({ action: 'list', ano: String(currentYear) });
   grid.innerHTML = '';
   const photos = r.photos || [];
   if (!photos.length) {
@@ -319,8 +441,10 @@ async function openPicker(target) {
     el.appendChild(img);
     el.addEventListener('click', async () => {
       $('picker').hidden = true;
-      const action = pickerTarget === 'year' ? 'setCover' : 'setMainCover';
-      await apiPost({ action: action, password: pw, ano: String(currentYear), fileId: f.id });
+      if (pickerTarget === 'main') await apiPost({ action: 'setMainCover', password: pw, fileId: f.id });
+      else if (currentAlbum) await apiPost({ action: 'updateAlbum', password: pw, slug: currentAlbum, coverFileId: f.id });
+      else await apiPost({ action: 'setCover', password: pw, ano: String(currentYear), fileId: f.id });
+      await loadAlbums();
       loadCovers();
     });
     grid.appendChild(el);
@@ -385,7 +509,7 @@ async function uploadFile(file, onProgress) {
     prog(40);
     const data = await readAsBase64(file);
     prog(70);
-    const r = await apiPost({ action: 'uploadDirect', password: pw, ano: String(currentYear), name: file.name, mime: file.type, data: data });
+    const r = await apiPost(Object.assign({ action: 'uploadDirect', password: pw, name: file.name, mime: file.type, data: data }, currentAlbum ? { album: currentAlbum } : { ano: String(currentYear) }));
     if (!r.ok) throw new Error(r.error || 'falha');
     prog(100);
     return r.id;
@@ -400,7 +524,7 @@ async function uploadFile(file, onProgress) {
     if (!r.ok) throw new Error(r.error || 'falha');
     prog(Math.round(((i + 1) / (total + 1)) * 100));
   }
-  const fin = await apiPost({ action: 'uploadFinish', password: pw, uploadId: start.uploadId, ano: String(currentYear), name: file.name, mime: file.type });
+  const fin = await apiPost(Object.assign({ action: 'uploadFinish', password: pw, uploadId: start.uploadId, name: file.name, mime: file.type }, currentAlbum ? { album: currentAlbum } : { ano: String(currentYear) }));
   if (!fin.ok) throw new Error(fin.error || 'falha');
   prog(100);
   return fin.id;
@@ -434,13 +558,17 @@ async function handleFiles(list) {
 async function loadFiles() {
   const grid = $('filesGrid');
   grid.innerHTML = '<div class="skel" style="height:108px"></div><div class="skel" style="height:108px"></div><div class="skel" style="height:108px"></div>';
-  const r = await apiGet({ action: 'list', ano: String(currentYear) });
+  const r = currentAlbum
+    ? await apiGet({ action: 'list', album: currentAlbum })
+    : await apiGet({ action: 'list', ano: String(currentYear) });
   grid.innerHTML = '';
   const all = (r.photos || []).map((p) => Object.assign({ kind: 'foto' }, p))
     .concat((r.videos || []).map((v) => Object.assign({ kind: 'vídeo' }, v)))
     .sort((a, b) => (a.created < b.created ? 1 : -1));
   if (!all.length) {
-    grid.innerHTML = '<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Nada neste ano ainda. As fotos e vídeos que você enviar aparecem aqui.</p>';
+    grid.innerHTML = '<p style="color:var(--muted);font-size:13px;grid-column:1/-1">' +
+      (currentAlbum ? 'Nada neste álbum ainda.' : 'Nada neste ano ainda.') +
+      ' As fotos e vídeos que você enviar aparecem aqui.</p>';
     return;
   }
   all.forEach((f) => {
@@ -461,11 +589,97 @@ async function loadFiles() {
     del.addEventListener('click', async () => {
       if (!window.confirm('Apagar "' + f.name + '"? Vai para a lixeira do Drive (dá para recuperar por 30 dias).')) return;
       del.disabled = true;
-      const rr = await apiPost({ action: 'delete', password: pw, ano: String(currentYear), fileId: f.id });
+      const rr = await apiPost(Object.assign({ action: 'delete', password: pw, fileId: f.id }, currentAlbum ? { album: currentAlbum } : { ano: String(currentYear) }));
       if (rr.ok) { el.remove(); } else { del.disabled = false; }
     });
     el.appendChild(del);
+    const capBtn = document.createElement('button');
+    capBtn.className = 'cap-btn';
+    capBtn.textContent = f.caption ? '✎ ' + f.caption : '+ legenda';
+    capBtn.title = 'Dar nome/legenda (opcional)';
+    capBtn.addEventListener('click', async () => {
+      const novo = window.prompt('Legenda desta mídia (deixe vazio para não mostrar nada):', f.caption || '');
+      if (novo === null) return;
+      capBtn.disabled = true;
+      const rr = await apiPost(Object.assign({ action: 'setCaption', password: pw, fileId: f.id, caption: novo.trim() }, currentAlbum ? { album: currentAlbum } : { ano: String(currentYear) }));
+      capBtn.disabled = false;
+      if (rr.ok) { f.caption = novo.trim(); capBtn.textContent = f.caption ? '✎ ' + f.caption : '+ legenda'; }
+      else if (rr.error) window.alert(rr.error);
+    });
+    el.appendChild(capBtn);
     grid.appendChild(el);
+  });
+}
+
+/* ---------- abas ---------- */
+$('tabMedia').addEventListener('click', () => {
+  $('tabMedia').classList.add('on');
+  $('tabPeople').classList.remove('on');
+  $('mediaView').hidden = false;
+  $('peopleView').hidden = true;
+});
+$('tabPeople').addEventListener('click', () => {
+  $('tabPeople').classList.add('on');
+  $('tabMedia').classList.remove('on');
+  $('peopleView').hidden = false;
+  $('mediaView').hidden = true;
+  loadPeople(false);
+});
+
+/* ---------- pessoas ---------- */
+function statusChip(st) {
+  const map = {
+    VERIFICAR: ['aguardando código', 'st-wait'],
+    PENDENTE: ['aguardando liberação', 'st-pend'],
+    APROVADO: ['liberado', 'st-ok'],
+    BLOQUEADO: ['bloqueado', 'st-block']
+  };
+  const m = map[st] || [st, 'st-wait'];
+  return '<span class="st-chip ' + m[1] + '">' + m[0] + '</span>';
+}
+
+async function loadPeople(onlyBadge) {
+  let r;
+  try { r = await apiPost({ action: 'pessoas', password: pw }); } catch (e) { return; }
+  if (!r.ok) return;
+  const list = r.pessoas || [];
+  const pend = list.filter((p) => p.status === 'PENDENTE').length;
+  $('peopleBadge').hidden = pend === 0;
+  $('peopleBadge').textContent = pend;
+  if (onlyBadge) return;
+  const box = $('peopleList');
+  if (!list.length) {
+    box.innerHTML = '<p style="color:var(--muted);font-size:13.5px">Ninguém pediu acesso ainda. Quando alguém se cadastrar no site, aparece aqui.</p>';
+    return;
+  }
+  box.innerHTML = '';
+  list.forEach((p) => {
+    const row = document.createElement('div');
+    row.className = 'person-row';
+    const quando = p.criadoEm ? new Date(p.criadoEm).toLocaleDateString('pt-BR') : '';
+    row.innerHTML =
+      '<div class="person-info"><b></b><span class="person-mail"></span><span class="person-date"></span></div>' +
+      '<div class="person-side">' + statusChip(p.status) + '<div class="person-btns"></div></div>';
+    row.querySelector('b').textContent = p.nome;
+    row.querySelector('.person-mail').textContent = p.email;
+    row.querySelector('.person-date').textContent = 'desde ' + quando;
+    const btns = row.querySelector('.person-btns');
+    function act(label, action, cls) {
+      const b = document.createElement('button');
+      b.className = 'btn btn-ghost person-btn ' + (cls || '');
+      b.textContent = label;
+      b.addEventListener('click', async () => {
+        b.disabled = true;
+        b.textContent = '...';
+        await apiPost({ action: action, password: pw, email: p.email });
+        loadPeople(false);
+      });
+      btns.appendChild(b);
+    }
+    if (p.status === 'PENDENTE' || p.status === 'VERIFICAR') act('Liberar', 'liberar', 'pb-ok');
+    if (p.status === 'APROVADO') act('Bloquear', 'bloquear', 'pb-block');
+    if (p.status === 'BLOQUEADO') act('Desbloquear', 'desbloquear', 'pb-ok');
+    box.appendChild(row);
   });
 }
 

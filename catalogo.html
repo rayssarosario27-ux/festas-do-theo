@@ -10,13 +10,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/theo-photo.css">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎂</text></svg>">
+<meta name="theme-color" content="#141414">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="assets/favicon.png">
 </head>
 <body>
 
-<nav class="nav" id="nav">
-  <a class="wordmark" href="catalogo.html">FESTAS DO THÉO</a>
-</nav>
+<nav class="nav" id="nav"></nav>
 
 <header class="hero2">
   <div class="hero-bg theo-photo-bg"></div>
@@ -96,6 +97,7 @@
 </footer>
 
 <script src="assets/api.js"></script>
+<script src="assets/auth.js"></script>
 <script>
 if (new URLSearchParams(location.search).has('flat')) document.querySelector('.hero2').style.display = 'none';
 
@@ -182,7 +184,7 @@ function cardFor(it, kind, href) {
   const img = document.createElement('img');
   img.loading = 'lazy';
   img.src = it.thumb.replace('w1600', 'w800');
-  img.alt = it.name;
+  img.alt = it.caption || 'Foto do Théo';
   a.appendChild(img);
   if (isNew(it.created)) {
     const b = document.createElement('span');
@@ -199,10 +201,12 @@ function cardFor(it, kind, href) {
   const g = document.createElement('div');
   g.className = 'c-grad';
   a.appendChild(g);
-  const t = document.createElement('div');
-  t.className = 'c-title';
-  t.textContent = it.name;
-  a.appendChild(t);
+  if (it.caption) {
+    const t = document.createElement('div');
+    t.className = 'c-title';
+    t.textContent = it.caption;
+    a.appendChild(t);
+  }
   return a;
 }
 
@@ -252,7 +256,12 @@ async function init() {
     if (photos.length || videos.length) document.getElementById('rowSoon').style.display = 'none';
   } catch (e) {}
 }
-init();
+(async () => {
+  const u = await requireAuth();
+  if (!u) return;
+  buildNav('inicio', u);
+  init();
+})();
 </script>
 </body>
 </html>
