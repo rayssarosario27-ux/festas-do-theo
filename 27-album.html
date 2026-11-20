@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Álbum • Festas do Théo</title>
+<meta name="theme-color" content="#141414">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/theo-photo.css">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+</head>
+<body>
+
+<nav class="nav solid" id="nav"></nav>
+
+<header class="hero2">
+  <div class="hero-bg theo-photo-bg"></div>
+  <div class="hero-shade"></div>
+  <div class="hero-content">
+    <p class="kick">Crescendo com Theo</p>
+    <h1 class="show-title" id="title">ÁLBUM</h1>
+    <p class="synopsis" id="synopsis"></p>
+    <div class="btns">
+      <a class="btn-play" href="#videos" id="btnVideos" style="display:none">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 3.8v16.4c0 .9 1 1.5 1.8 1L21 12.9c.8-.5.8-1.6 0-2.1L7.8 2.8C7 2.3 6 2.9 6 3.8z"/></svg>
+        Ver vídeos
+      </a>
+    </div>
+  </div>
+</header>
+
+<main class="rows">
+  <section class="row" id="rowPhotos" hidden>
+    <div class="row-head"><span class="row-title">Fotos</span></div>
+    <div class="row-scroll" id="scrollPhotos"></div>
+  </section>
+
+  <section class="row" id="rowVideos" hidden>
+    <a id="videos"></a>
+    <div class="row-head"><span class="row-title">Vídeos</span></div>
+    <div class="row-scroll" id="scrollVideos"></div>
+  </section>
+
+  <section class="coming" id="coming" hidden>
+    <p class="soon-kick">Em breve</p>
+    <h2 class="soon-big" id="soonBig">FOTOS E VÍDEOS</h2>
+    <p class="note">As fotos e os vídeos deste álbum vão aparecer aqui.</p>
+  </section>
+</main>
+
+<footer>
+  Guardado para sempre na conta da família.
+</footer>
+
+<div class="lightbox" id="lb">
+  <a class="lb-close lb-dl" id="lbDl" href="#" target="_blank" rel="noopener" title="Baixar" aria-label="Baixar">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 20h16"/></svg>
+  </a>
+  <button class="lb-close" id="lbClose" aria-label="Fechar">✕</button>
+  <button class="lb-nav lb-prev" id="lbPrev" aria-label="Anterior">‹</button>
+  <div class="lb-media" id="lbMedia"></div>
+  <button class="lb-nav lb-next" id="lbNext" aria-label="Próximo">›</button>
+  <div class="lb-count" id="lbCount"></div>
+  <div class="lb-cap" id="lbCap"></div>
+</div>
+
+<script src="assets/api.js"></script>
+<script src="assets/auth.js"></script>
+<script>
+const slug = new URLSearchParams(location.search).get('slug') || '';
+
+let lbList = [];
+let lbIndex = 0;
+
+function isNew(created) {
+  return (Date.now() - new Date(created).getTime()) < 14 * 24 * 3600 * 1000;
+}
+
+function cardFor(it, kind, list, idx) {
+  const el = document.createElement('div');
+  el.className = 'card';
+  const img = document.createElement('img');
+  img.loading = 'lazy';
+  img.src = it.thumb.replace('w1600', 'w800');
+  img.alt = it.caption || 'Foto do Théo';
+  el.appendChild(img);
+  if (isNew(it.created)) {
+    const b = document.createElement('span');
+    b.className = 'badge-new';
+    b.textContent = 'NOVO';
+    el.appendChild(b);
+  }
+  if (kind === 'video') {
+    const p = document.createElement('div');
+    p.className = 'pplay';
+    p.innerHTML = '<span><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M6 3.8v16.4c0 .9 1 1.5 1.8 1L21 12.9c.8-.5.8-1.6 0-2.1L7.8 2.8C7 2.3 6 2.9 6 3.8z"/></svg></span>';
+    el.appendChild(p);
+  }
+  const g = document.createElement('div');
+  g.className = 'c-grad';
+  el.appendChild(g);
+  el.addEventListener('click', () => openLb(list, idx));
+  return el;
+}
+
+function openLb(list, idx) {
+  lbList = list;
+  lbIndex = idx;
+  renderLb();
+  document.getElementById('lb').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLb() {
+  document.getElementById('lb').classList.remove('open');
+  document.getElementById('lbMedia').innerHTML = '';
+  document.body.style.overflow = '';
+}
+function stepLb(d) {
+  lbIndex = (lbIndex + d + lbList.length) % lbList.length;
+  renderLb();
+}
+function renderLb() {
+  const it = lbList[lbIndex];
+  const media = document.getElementById('lbMedia');
+  media.innerHTML = '';
+  if (it.kind === 'video') {
+    const f = document.createElement('iframe');
+    f.src = it.preview;
+    f.allow = 'autoplay; fullscreen';
+    f.allowFullscreen = true;
+    media.appendChild(f);
+  } else {
+    const img = document.createElement('img');
+    img.src = it.thumb.replace('w1600', 'w2048');
+    img.alt = it.caption || 'Foto do Théo';
+    media.appendChild(img);
+  }
+  document.getElementById('lbCount').textContent = (lbIndex + 1) + ' / ' + lbList.length;
+  const capEl = document.getElementById('lbCap');
+  capEl.textContent = it.caption || '';
+  capEl.style.display = it.caption ? '' : 'none';
+  document.getElementById('lbDl').href = it.download || '#';
+}
+
+document.getElementById('lbClose').addEventListener('click', closeLb);
+document.getElementById('lbPrev').addEventListener('click', () => stepLb(-1));
+document.getElementById('lbNext').addEventListener('click', () => stepLb(1));
+document.getElementById('lb').addEventListener('click', (e) => { if (e.target.id === 'lb') closeLb(); });
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('lb').classList.contains('open')) return;
+  if (e.key === 'Escape') closeLb();
+  if (e.key === 'ArrowLeft') stepLb(-1);
+  if (e.key === 'ArrowRight') stepLb(1);
+});
+
+async function init() {
+  if (!slug) { location.replace('crescendo.html'); return; }
+  let data = { photos: [], videos: [], meta: null };
+  try { data = await apiGet({ action: 'list', album: slug }); } catch (e) {}
+  const meta = data.meta || { nome: 'Álbum', desc: '' };
+  if (meta.coverFileId) document.querySelector('.hero-bg').style.backgroundImage = "url('" + coverUrl(meta.coverFileId, 2048) + "')";
+  document.title = meta.nome + ' • Festas do Théo';
+  document.getElementById('title').textContent = meta.nome.toUpperCase();
+  document.getElementById('synopsis').textContent = meta.desc || 'Momentos guardados para sempre.';
+  document.getElementById('soonBig').textContent = meta.nome.toUpperCase();
+
+  const photos = (data.photos || []).map((p) => Object.assign({ kind: 'photo' }, p));
+  const videos = (data.videos || []).map((v) => Object.assign({ kind: 'video' }, v));
+  const coming = document.getElementById('coming');
+  if (photos.length) {
+    document.getElementById('rowPhotos').hidden = false;
+    photos.forEach((p, i) => document.getElementById('scrollPhotos').appendChild(cardFor(p, 'photo', photos, i)));
+  }
+  if (videos.length) {
+    document.getElementById('rowVideos').hidden = false;
+    videos.forEach((v, i) => document.getElementById('scrollVideos').appendChild(cardFor(v, 'video', videos, i)));
+  }
+  coming.hidden = photos.length > 0 || videos.length > 0;
+  document.getElementById('btnVideos').style.display = videos.length ? '' : 'none';
+}
+
+(async () => {
+  const u = await requireAuth();
+  if (!u) return;
+  buildNav('crescendo', u);
+  init();
+})();
+</script>
+</body>
+</html>
