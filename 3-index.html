@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Memórias do Théo</title>
+<meta name="description" content="Toque para entrar nas memórias do Théo: cada ano, uma festa. Cada festa, guardada para sempre.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/theo-photo.css">
+<meta name="theme-color" content="#141414">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+</head>
+<body class="gate">
+
+<div class="gate-bg theo-photo-bg"></div>
+<div class="gate-shade"></div>
+<div class="gate-flash"></div>
+
+<div class="gate-content">
+  <p class="kick">Um álbum para sempre</p>
+  <h1 class="gate-title">MEMÓRIAS<br>DO THÉO</h1>
+  <p class="gate-sub">Cada festa, cada ano, guardados para sempre.</p>
+  <button class="gate-btn" id="enterBtn">Toque para entrar</button>
+</div>
+
+<script src="assets/api.js"></script>
+<script src="assets/auth.js"></script>
+<script>
+// entrada só para contas aprovadas
+requireAuth().then((u) => { if (!u) return; document.body.classList.add('auth-ok'); });
+
+// capa principal personalizada (escolhida pela família no painel)
+apiYears().then((res) => {
+  if (res.mainCover) document.querySelector('.gate-bg').style.backgroundImage = "url('" + coverUrl(res.mainCover, 2048) + "')";
+}).catch(() => {});
+
+const params = new URLSearchParams(location.search);
+const btn = document.getElementById('enterBtn');
+
+function enter() {
+  document.body.classList.add('entering');
+  if (!params.has('entering') && !params.has('mid')) {
+    setTimeout(() => { location.href = 'catalogo.html'; }, 1150);
+  }
+}
+btn.addEventListener('click', enter);
+
+// modos de captura de tela (não afetam o uso normal)
+if (params.has('entering')) document.body.classList.add('entering');
+if (params.has('mid')) {
+  document.body.classList.add('entering');
+  document.querySelectorAll('.gate-bg, .gate-shade, .gate-content, .gate-flash, .gate-btn').forEach((el) => {
+    el.style.animationDelay = '-0.42s';
+    el.style.animationPlayState = 'paused';
+  });
+  const flash = document.querySelector('.gate-flash');
+  flash.style.animation = 'none';
+  flash.style.opacity = '0.85';
+}
+</script>
+</body>
+</html>

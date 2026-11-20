@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Festas do Théo</title>
+<meta name="description" content="O álbum de aniversários do Théo: cada ano, uma festa. Cada festa, guardada para sempre.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/theo-photo.css">
+<meta name="theme-color" content="#141414">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+</head>
+<body>
+
+<nav class="nav" id="nav"></nav>
+
+<header class="hero2">
+  <div class="hero-bg theo-photo-bg"></div>
+  <div class="hero-shade"></div>
+  <div class="hero-content">
+    <p class="kick" id="heroKick">Nova festa</p>
+    <h1 class="show-title" id="heroTitle">THÉO FAZ 4</h1>
+    <div class="meta">
+      <span class="match">100% família</span>
+      <span id="heroYear">2026</span>
+      <span class="badge-l">L</span>
+      <span id="heroTheme">Vingadores</span>
+    </div>
+    <p class="synopsis" id="heroSynopsis">O pequeno herói completa 4 anos numa festa épica dos Vingadores. As fotos e os vídeos do grande dia ficam guardados aqui, para sempre.</p>
+    <div class="btns">
+      <a class="btn-play" id="heroPlay" href="ano.html?ano=4">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 3.8v16.4c0 .9 1 1.5 1.8 1L21 12.9c.8-.5.8-1.6 0-2.1L7.8 2.8C7 2.3 6 2.9 6 3.8z"/></svg>
+        Ver a festa
+      </a>
+      <a class="btn-gray" id="heroInvite" href="https://theo-4-anos.pages.dev/" target="_blank" rel="noopener">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M3 11h18M12 7v14M12 7s-1.5-4-4.5-4S4 6.5 6 7h6zm0 0s1.5-4 4.5-4S20 6.5 18 7h-6z"/></svg>
+        Convite
+      </a>
+    </div>
+  </div>
+</header>
+
+<main class="rows">
+  <section class="row reveal">
+    <div class="row-head"><span class="row-title">Escolha a festa</span></div>
+    <div class="row-scroll" id="postersRow"></div>
+  </section>
+
+  <section class="row" id="rowPhotos" hidden>
+    <div class="row-head">
+      <span class="row-title" id="rowPhotosTitle">Fotos</span>
+      <a class="row-more" id="rowPhotosMore" href="#">Explorar tudo ›</a>
+    </div>
+    <div class="row-scroll" id="scrollPhotos"></div>
+  </section>
+
+  <section class="row" id="rowVideos" hidden>
+    <div class="row-head">
+      <span class="row-title" id="rowVideosTitle">Vídeos</span>
+      <a class="row-more" id="rowVideosMore" href="#">Explorar tudo ›</a>
+    </div>
+    <div class="row-scroll" id="scrollVideos"></div>
+  </section>
+
+  <section class="row reveal" id="rowSoon">
+    <div class="row-head"><span class="row-title">Em breve no catálogo</span></div>
+    <div class="row-scroll">
+      <a class="card" id="promoPhotos" href="ano.html?ano=4" style="background:linear-gradient(140deg,#3a0d10,#141414 70%)">
+        <span class="badge-new">ESTREIA</span>
+        <div class="poster-inner">
+          <span class="poster-theme" id="promoDate" style="color:var(--red);letter-spacing:.3em">13.12.2026</span>
+          <span class="poster-num" style="font-size:30px;margin-top:8px">FOTOS E VÍDEOS</span>
+          <span class="poster-year-tag" id="promoSub">da festa de 4 anos</span>
+        </div>
+        <div class="c-grad"></div>
+      </a>
+      <a class="card" id="promoInvite" href="https://theo-4-anos.pages.dev/" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#12203f,#141414 70%)">
+        <div class="poster-inner">
+          <span class="poster-theme" id="promoTheme" style="color:#7fa8ff;letter-spacing:.3em">VINGADORES</span>
+          <span class="poster-num" style="font-size:30px;margin-top:8px">O CONVITE</span>
+          <span class="poster-year-tag">já está no ar</span>
+        </div>
+        <div class="c-grad"></div>
+      </a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  As fotos e os vídeos de cada festa ficam guardados para sempre,<br>
+  na conta da família, e este catálogo cresce um ano de cada vez.
+</footer>
+
+<script src="assets/api.js"></script>
+<script src="assets/auth.js"></script>
+<script>
+if (new URLSearchParams(location.search).has('flat')) document.querySelector('.hero2').style.display = 'none';
+
+// Captura local: simula capa de ano usando a foto-base (só com ?mockcover na URL)
+if (new URLSearchParams(location.search).has('mockcover')) {
+  window.__mockCover = function (imgEl) {
+    const bg = getComputedStyle(document.querySelector('.hero-bg')).backgroundImage;
+    if (bg && bg !== 'none') imgEl.src = bg.slice(5, -2);
+  };
+}
+
+const nav = document.getElementById('nav');
+addEventListener('scroll', () => nav.classList.toggle('solid', scrollY > 40), { passive: true });
+
+const io = new IntersectionObserver((es) => {
+  es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('on'); io.unobserve(e.target); } });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+
+function isNew(created) {
+  return (Date.now() - new Date(created).getTime()) < 14 * 24 * 3600 * 1000;
+}
+function partyYear(n) { return 2022 + Number(n); }
+
+function posterActive(n, y, isLatest, mainCover) {
+  const a = document.createElement('a');
+  a.className = 'card poster poster-active';
+  a.href = 'ano.html?ano=' + n;
+  const coverId = (y && y.coverFileId) || mainCover || '';
+  if (coverId || (window.__mockCover && isLatest)) {
+    a.classList.add('has-cover');
+    const img = document.createElement('img');
+    img.className = 'poster-cover';
+    img.loading = 'lazy';
+    img.src = coverId ? coverUrl(coverId, 700) : '';
+    if (!coverId) window.__mockCover(img);
+    img.alt = 'Capa da festa de ' + n + ' anos';
+    a.appendChild(img);
+  }
+  if (isLatest) {
+    const b = document.createElement('span');
+    b.className = 'badge-new';
+    b.textContent = 'NOVO';
+    a.appendChild(b);
+  }
+  const inner = document.createElement('div');
+  inner.className = 'poster-inner';
+  if (coverId || a.classList.contains('has-cover')) {
+    inner.innerHTML =
+      '<span class="poster-title-sm">Théo faz ' + n + '</span>' +
+      '<span class="poster-meta-sm">' + (y && y.theme ? y.theme : '') + (y && y.shortDate ? (y.theme ? ' • ' : '') + y.shortDate : '') + '</span>';
+  } else {
+    inner.innerHTML =
+      '<span class="poster-num">' + n + '</span>' +
+      '<span class="poster-anos">ANOS</span>' +
+      (y && y.theme ? '<span class="poster-theme">' + y.theme + '</span>' : '') +
+      (y && y.shortDate ? '<span class="poster-year-tag">' + y.shortDate + '</span>' : '');
+  }
+  a.appendChild(inner);
+  const play = document.createElement('div');
+  play.className = 'poster-play';
+  play.innerHTML = '<span><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M6 3.8v16.4c0 .9 1 1.5 1.8 1L21 12.9c.8-.5.8-1.6 0-2.1L7.8 2.8C7 2.3 6 2.9 6 3.8z"/></svg></span>';
+  a.appendChild(play);
+  return a;
+}
+
+function posterSoon(n) {
+  const d = document.createElement('div');
+  d.className = 'card poster poster-soon';
+  d.innerHTML =
+    '<div class="poster-inner">' +
+    '<span class="poster-num">' + n + '</span>' +
+    '<span class="poster-anos">ANOS</span>' +
+    '<span class="poster-theme"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Em breve</span>' +
+    '<span class="poster-year-tag">' + partyYear(n) + '</span>' +
+    '</div>';
+  return d;
+}
+
+function cardFor(it, kind, href) {
+  const a = document.createElement('a');
+  a.className = 'card';
+  a.href = href;
+  const img = document.createElement('img');
+  img.loading = 'lazy';
+  img.src = it.thumb.replace('w1600', 'w800');
+  img.alt = it.name;
+  a.appendChild(img);
+  if (isNew(it.created)) {
+    const b = document.createElement('span');
+    b.className = 'badge-new';
+    b.textContent = 'NOVO';
+    a.appendChild(b);
+  }
+  if (kind === 'video') {
+    const p = document.createElement('div');
+    p.className = 'pplay';
+    p.innerHTML = '<span><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M6 3.8v16.4c0 .9 1 1.5 1.8 1L21 12.9c.8-.5.8-1.6 0-2.1L7.8 2.8C7 2.3 6 2.9 6 3.8z"/></svg></span>';
+    a.appendChild(p);
+  }
+  const g = document.createElement('div');
+  g.className = 'c-grad';
+  a.appendChild(g);
+  const t = document.createElement('div');
+  t.className = 'c-title';
+  t.textContent = it.name;
+  a.appendChild(t);
+  return a;
+}
+
+async function init() {
+  const res = await apiYears();
+  const cfg = res.years;
+  const nums = Object.keys(cfg).map(Number).filter((n) => !isNaN(n)).sort((a, b) => a - b);
+  const latest = nums.length ? nums[nums.length - 1] : 4;
+  const Y = cfg[String(latest)] || YEARS['4'];
+
+  if (res.mainCover) document.querySelector('.hero-bg').style.backgroundImage = "url('" + coverUrl(res.mainCover, 2048) + "')";
+
+  document.getElementById('heroTitle').textContent = 'THÉO FAZ ' + latest;
+  document.getElementById('heroYear').textContent = partyYear(latest);
+  if (Y.theme) document.getElementById('heroTheme').textContent = Y.theme;
+  if (Y.synopsis) document.getElementById('heroSynopsis').textContent = Y.synopsis;
+  document.getElementById('heroPlay').href = 'ano.html?ano=' + latest;
+  const heroInvite = document.getElementById('heroInvite');
+  if (Y.invite) heroInvite.href = Y.invite; else heroInvite.style.display = 'none';
+
+  const row = document.getElementById('postersRow');
+  nums.forEach((n) => row.appendChild(posterActive(n, cfg[String(n)], n === latest, res.mainCover)));
+  for (let n = latest + 1; n <= latest + 3; n++) row.appendChild(posterSoon(n));
+
+  document.getElementById('rowPhotosTitle').textContent = 'Fotos • ' + latest + ' anos';
+  document.getElementById('rowVideosTitle').textContent = 'Vídeos • ' + latest + ' anos';
+  document.getElementById('rowPhotosMore').href = 'ano.html?ano=' + latest;
+  document.getElementById('rowVideosMore').href = 'ano.html?ano=' + latest;
+  document.getElementById('promoPhotos').href = 'ano.html?ano=' + latest;
+  if (Y.shortDate) document.getElementById('promoDate').textContent = Y.shortDate;
+  document.getElementById('promoSub').textContent = 'da festa de ' + latest + ' anos';
+  if (Y.theme) document.getElementById('promoTheme').textContent = Y.theme.toUpperCase();
+  if (Y.invite) document.getElementById('promoInvite').href = Y.invite;
+
+  try {
+    const data = await apiGet({ action: 'list', ano: String(latest) });
+    const photos = data.photos || [];
+    const videos = data.videos || [];
+    if (photos.length) {
+      document.getElementById('rowPhotos').hidden = false;
+      photos.slice(0, 20).forEach((p) => document.getElementById('scrollPhotos').appendChild(cardFor(p, 'photo', 'ano.html?ano=' + latest)));
+    }
+    if (videos.length) {
+      document.getElementById('rowVideos').hidden = false;
+      videos.slice(0, 20).forEach((v) => document.getElementById('scrollVideos').appendChild(cardFor(v, 'video', 'ano.html?ano=' + latest)));
+    }
+    if (photos.length || videos.length) document.getElementById('rowSoon').style.display = 'none';
+  } catch (e) {}
+}
+(async () => {
+  const u = await requireAuth();
+  if (!u) return;
+  buildNav('inicio', u);
+  init();
+})();
+</script>
+</body>
+</html>

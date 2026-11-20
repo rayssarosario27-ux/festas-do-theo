@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Quase lá • Festas do Théo</title>
+<meta name="theme-color" content="#141414">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/theo-photo.css">
+</head>
+<body class="auth-page">
+
+<div class="auth-bg theo-photo-bg"></div>
+<div class="auth-shade"></div>
+
+<div class="auth-wrap">
+  <a class="wordmark auth-logo" href="#">FESTAS DO THÉO</a>
+
+  <div class="auth-card auth-wait">
+    <div class="wait-emoji">🎈</div>
+    <h1 class="auth-title">Quase lá!</h1>
+    <p class="auth-sub">Seu cadastro foi confirmado. Agora a família só precisa <b>liberar seu acesso</b> — assim que liberarem, você recebe um email e já pode ver todas as fotos e vídeos do Théo.</p>
+    <button class="auth-btn" id="btnAgain">Já fui liberado(a)</button>
+    <button class="auth-link" id="btnOut">Sair desta conta</button>
+  </div>
+
+  <p class="auth-foot">Guardado para sempre na conta da família.</p>
+</div>
+
+<script src="assets/api.js"></script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
+<script>
+document.getElementById('btnAgain').addEventListener('click', async () => {
+  const t = localStorage.getItem('theo_token');
+  try {
+    if (t) {
+      const r = await apiPost({ action: 'sessao', token: t });
+      if (r.ok && r.status === 'APROVADO') { location.href = 'catalogo.html'; return; }
+    }
+  } catch (e) {}
+  const b = document.getElementById('btnAgain');
+  b.textContent = 'Ainda não liberaram — tente daqui a pouco';
+  setTimeout(() => { b.textContent = 'Já fui liberado(a)'; }, 3500);
+});
+document.getElementById('btnOut').addEventListener('click', async () => {
+  const t = localStorage.getItem('theo_token');
+  try { if (t) await apiPost({ action: 'logout', token: t }); } catch (e) {}
+  localStorage.removeItem('theo_token');
+  localStorage.removeItem('theo_name');
+  location.href = 'conta.html';
+});
+</script>
+</body>
+</html>

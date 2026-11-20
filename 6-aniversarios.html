@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Aniversários • Festas do Théo</title>
+<meta name="theme-color" content="#141414">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/theo-photo.css">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+</head>
+<body>
+
+<nav class="nav solid" id="nav"></nav>
+
+<main class="page">
+  <h1 class="page-title">Aniversários</h1>
+  <p class="page-sub">Cada ano, uma festa. Em ordem, do começo.</p>
+  <div class="grid2" id="grid"></div>
+</main>
+
+<footer>
+  Guardado para sempre na conta da família.
+</footer>
+
+<script src="assets/api.js"></script>
+<script src="assets/auth.js"></script>
+<script>
+function partyYear(n) { return 2022 + Number(n); }
+
+function posterActive(n, y, isLatest, mainCover) {
+  const a = document.createElement('a');
+  a.className = 'card poster poster-active';
+  a.href = 'ano.html?ano=' + n;
+  const coverId = (y && y.coverFileId) || '';
+  if (coverId) {
+    a.classList.add('has-cover');
+    const img = document.createElement('img');
+    img.className = 'poster-cover';
+    img.loading = 'lazy';
+    img.src = coverUrl(coverId, 700);
+    img.alt = 'Capa da festa de ' + n + ' anos';
+    a.appendChild(img);
+  }
+  if (isLatest) {
+    const b = document.createElement('span');
+    b.className = 'badge-new';
+    b.textContent = 'NOVO';
+    a.appendChild(b);
+  }
+  const inner = document.createElement('div');
+  inner.className = 'poster-inner';
+  if (coverId) {
+    inner.innerHTML =
+      '<span class="poster-title-sm">Théo faz ' + n + '</span>' +
+      '<span class="poster-meta-sm">' + (y && y.theme ? y.theme : '') + (y && y.shortDate ? (y.theme ? ' • ' : '') + y.shortDate : '') + '</span>';
+  } else {
+    inner.innerHTML =
+      '<span class="poster-num">' + n + '</span>' +
+      '<span class="poster-anos">ANOS</span>' +
+      (y && y.theme ? '<span class="poster-theme">' + y.theme + '</span>' : '') +
+      (y && y.shortDate ? '<span class="poster-year-tag">' + y.shortDate + '</span>' : '');
+  }
+  a.appendChild(inner);
+  return a;
+}
+
+function posterSoon(n) {
+  const d = document.createElement('div');
+  d.className = 'card poster poster-soon';
+  d.innerHTML =
+    '<div class="poster-inner">' +
+    '<span class="poster-num">' + n + '</span>' +
+    '<span class="poster-anos">ANOS</span>' +
+    '<span class="poster-theme"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Em breve</span>' +
+    '<span class="poster-year-tag">' + partyYear(n) + '</span>' +
+    '</div>';
+  return d;
+}
+
+async function init() {
+  const res = await apiYears();
+  const cfg = res.years;
+  const nums = Object.keys(cfg).map(Number).filter((n) => !isNaN(n)).sort((a, b) => a - b);
+  const latest = nums.length ? nums[nums.length - 1] : 4;
+  const grid = document.getElementById('grid');
+  nums.forEach((n) => grid.appendChild(posterActive(n, cfg[String(n)], n === latest, res.mainCover)));
+  for (let n = latest + 1; n <= latest + 3; n++) grid.appendChild(posterSoon(n));
+}
+
+(async () => {
+  const u = await requireAuth();
+  if (!u) return;
+  buildNav('aniversarios', u);
+  init();
+})();
+</script>
+</body>
+</html>

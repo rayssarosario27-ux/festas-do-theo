@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Crescendo com Theo • Festas do Théo</title>
+<meta name="theme-color" content="#141414">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/theo-photo.css">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+</head>
+<body>
+
+<nav class="nav solid" id="nav"></nav>
+
+<main class="page">
+  <h1 class="page-title">Crescendo com Theo</h1>
+  <p class="page-sub">Viagens, Natais, primeiras vezes... os momentos entre uma festa e outra.</p>
+  <div class="grid2" id="grid"></div>
+  <div class="coming" id="empty" hidden>
+    <p class="soon-kick">Em breve</p>
+    <h2 class="soon-big">NOVOS ÁLBUNS</h2>
+    <p class="note">A família vai criar álbuns aqui: viagens, Natais, passeios e tudo que acontece entre uma festa e outra.</p>
+  </div>
+</main>
+
+<footer>
+  Guardado para sempre na conta da família.
+</footer>
+
+<script src="assets/api.js"></script>
+<script src="assets/auth.js"></script>
+<script>
+function albumCard(a) {
+  const el = document.createElement('a');
+  el.className = 'card poster poster-active album-card';
+  el.href = 'album.html?slug=' + encodeURIComponent(a.slug);
+  if (a.coverFileId) {
+    el.classList.add('has-cover');
+    const img = document.createElement('img');
+    img.className = 'poster-cover';
+    img.loading = 'lazy';
+    img.src = coverUrl(a.coverFileId, 700);
+    img.alt = 'Capa do álbum ' + a.nome;
+    el.appendChild(img);
+  }
+  const inner = document.createElement('div');
+  inner.className = 'poster-inner';
+  if (a.coverFileId) {
+    inner.innerHTML =
+      '<span class="poster-title-sm">' + a.nome + '</span>' +
+      (a.desc ? '<span class="poster-meta-sm">' + a.desc + '</span>' : '');
+  } else {
+    inner.innerHTML =
+      '<span class="poster-num album-initial">' + (a.nome[0] || 'T').toUpperCase() + '</span>' +
+      '<span class="poster-theme album-name">' + a.nome + '</span>' +
+      (a.desc ? '<span class="poster-year-tag">' + a.desc + '</span>' : '');
+  }
+  el.appendChild(inner);
+  return el;
+}
+
+async function init() {
+  let albums = {};
+  try {
+    const r = await apiGet({ action: 'albums' });
+    if (r.ok) albums = r.albums || {};
+  } catch (e) {}
+  const list = Object.values(albums).sort((a, b) => (a.criadoEm < b.criadoEm ? -1 : 1));
+  const grid = document.getElementById('grid');
+  if (!list.length) { document.getElementById('empty').hidden = false; return; }
+  list.forEach((a) => grid.appendChild(albumCard(a)));
+}
+
+(async () => {
+  const u = await requireAuth();
+  if (!u) return;
+  buildNav('crescendo', u);
+  init();
+})();
+</script>
+</body>
+</html>

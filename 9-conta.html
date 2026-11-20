@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Entrar • Festas do Théo</title>
+<meta name="theme-color" content="#141414">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/theo-photo.css">
+</head>
+<body class="auth-page">
+
+<div class="auth-bg theo-photo-bg"></div>
+<div class="auth-shade"></div>
+
+<div class="auth-wrap">
+  <a class="wordmark auth-logo" href="conta.html">FESTAS DO THÉO</a>
+
+  <div class="auth-card" id="card">
+    <!-- ETAPA: entrar -->
+    <div id="stepLogin">
+      <h1 class="auth-title">Entrar</h1>
+      <p class="auth-sub">O álbum do Théo é só para a família e os amigos. Entre com sua conta.</p>
+      <div class="auth-err" id="loginErr" hidden></div>
+      <div class="auth-ok" id="loginOk" hidden></div>
+      <label class="auth-label">EMAIL
+        <input type="email" id="loginEmail" autocomplete="email" inputmode="email">
+      </label>
+      <label class="auth-label">SENHA
+        <input type="password" id="loginPass" autocomplete="current-password">
+      </label>
+      <button class="auth-btn" id="btnLogin">Entrar</button>
+      <button class="auth-link" id="goRecover">Esqueci a senha</button>
+      <div class="auth-switch">Primeira vez aqui? <button class="auth-link" id="goSignup"><b>Criar conta</b></button></div>
+    </div>
+
+    <!-- ETAPA: criar conta -->
+    <div id="stepSignup" hidden>
+      <h1 class="auth-title">Criar conta</h1>
+      <p class="auth-sub">Depois do cadastro, a família libera seu acesso ao álbum.</p>
+      <div class="auth-err" id="signupErr" hidden></div>
+      <label class="auth-label">NOME
+        <input type="text" id="signupName" autocomplete="name">
+      </label>
+      <label class="auth-label">EMAIL
+        <input type="email" id="signupEmail" autocomplete="email" inputmode="email">
+      </label>
+      <label class="auth-label">SENHA
+        <input type="password" id="signupPass" autocomplete="new-password">
+      </label>
+      <button class="auth-btn" id="btnSignup">Cadastrar</button>
+      <div class="auth-switch">Já tem conta? <button class="auth-link" id="goLogin"><b>Entrar</b></button></div>
+    </div>
+
+    <!-- ETAPA: código de verificação -->
+    <div id="stepVerify" hidden>
+      <h1 class="auth-title">Confirme seu email</h1>
+      <p class="auth-sub">Enviamos um código de 6 dígitos para <b id="verifyEmail"></b>. Ele vale por 15 minutos.</p>
+      <div class="auth-err" id="verifyErr" hidden></div>
+      <label class="auth-label">CÓDIGO
+        <input type="text" id="verifyCode" class="auth-code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
+      </label>
+      <button class="auth-btn" id="btnVerify">Confirmar</button>
+      <button class="auth-link" id="btnResend">Não chegou? Reenviar código</button>
+    </div>
+
+    <!-- ETAPA: recuperar senha -->
+    <div id="stepRecover" hidden>
+      <h1 class="auth-title">Esqueci a senha</h1>
+      <p class="auth-sub">Digite seu email para receber um código e criar uma senha nova.</p>
+      <div class="auth-err" id="recErr" hidden></div>
+      <label class="auth-label">EMAIL
+        <input type="email" id="recEmail" autocomplete="email" inputmode="email">
+      </label>
+      <button class="auth-btn" id="btnRecover">Enviar código</button>
+      <button class="auth-link" id="goLogin2">Voltar para entrar</button>
+    </div>
+
+    <!-- ETAPA: redefinir senha -->
+    <div id="stepReset" hidden>
+      <h1 class="auth-title">Senha nova</h1>
+      <p class="auth-sub">Enviamos um código de 6 dígitos para <b id="resetEmail"></b>.</p>
+      <div class="auth-err" id="resetErr" hidden></div>
+      <label class="auth-label">CÓDIGO
+        <input type="text" id="resetCode" class="auth-code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
+      </label>
+      <label class="auth-label">SENHA NOVA
+        <input type="password" id="resetPass" autocomplete="new-password">
+      </label>
+      <button class="auth-btn" id="btnReset">Salvar senha nova</button>
+    </div>
+  </div>
+
+  <p class="auth-foot">Guardado para sempre na conta da família.</p>
+</div>
+
+<script src="assets/api.js"></script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
+<script>
+const $ = (id) => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+let pendingEmail = '';
+
+function show(step) {
+  ['stepLogin', 'stepSignup', 'stepVerify', 'stepRecover', 'stepReset'].forEach((s) => { $(s).hidden = s !== step; });
+}
+function err(el, msg) { el.textContent = msg; el.hidden = !msg; }
+function busy(btn, on, label) {
+  btn.disabled = on;
+  if (on) { btn.dataset.label = btn.textContent; btn.textContent = label || 'Aguarde...'; }
+  else if (btn.dataset.label) btn.textContent = btn.dataset.label;
+}
+
+// já logado? manda pro álbum
+(async () => {
+  const t = localStorage.getItem('theo_token');
+  if (!t) return;
+  try {
+    const r = await apiPost({ action: 'sessao', token: t });
+    if (r.ok && r.status === 'APROVADO') { location.replace('catalogo.html'); }
+    else if (r.ok) { location.replace('aguardando.html'); }
+  } catch (e) {}
+})();
+
+if (params.get('bloqueado')) {
+  err($('loginErr'), 'Esta conta foi bloqueada. Fale com a família.');
+}
+
+$('goSignup').addEventListener('click', () => show('stepSignup'));
+$('goLogin').addEventListener('click', () => show('stepLogin'));
+$('goLogin2').addEventListener('click', () => show('stepLogin'));
+$('goRecover').addEventListener('click', () => show('stepRecover'));
+
+$('btnLogin').addEventListener('click', async () => {
+  err($('loginErr'), ''); err($('loginOk'), '');
+  busy($('btnLogin'), true, 'Entrando...');
+  try {
+    const r = await apiPost({ action: 'loginConta', email: $('loginEmail').value, password: $('loginPass').value });
+    if (r.ok) {
+      localStorage.setItem('theo_token', r.token);
+      localStorage.setItem('theo_name', r.name || '');
+      location.href = r.status === 'APROVADO' ? 'catalogo.html' : 'aguardando.html';
+      return;
+    }
+    if (r.needsVerification) {
+      pendingEmail = $('loginEmail').value.trim().toLowerCase();
+      $('verifyEmail').textContent = pendingEmail;
+      show('stepVerify');
+    } else {
+      err($('loginErr'), r.error || 'não foi possível entrar');
+    }
+  } catch (e) { err($('loginErr'), 'falha de conexão, tente de novo'); }
+  busy($('btnLogin'), false);
+});
+
+$('btnSignup').addEventListener('click', async () => {
+  err($('signupErr'), '');
+  busy($('btnSignup'), true, 'Cadastrando...');
+  try {
+    const r = await apiPost({ action: 'cadastro', name: $('signupName').value, email: $('signupEmail').value, password: $('signupPass').value });
+    if (r.ok) {
+      pendingEmail = $('signupEmail').value.trim().toLowerCase();
+      $('verifyEmail').textContent = pendingEmail;
+      show('stepVerify');
+    } else {
+      err($('signupErr'), r.error || 'não foi possível cadastrar');
+    }
+  } catch (e) { err($('signupErr'), 'falha de conexão, tente de novo'); }
+  busy($('btnSignup'), false);
+});
+
+$('btnVerify').addEventListener('click', async () => {
+  err($('verifyErr'), '');
+  busy($('btnVerify'), true, 'Confirmando...');
+  try {
+    const r = await apiPost({ action: 'verificar', email: pendingEmail, code: $('verifyCode').value });
+    if (r.ok) { location.href = 'aguardando.html'; return; }
+    err($('verifyErr'), r.error || 'código inválido');
+  } catch (e) { err($('verifyErr'), 'falha de conexão, tente de novo'); }
+  busy($('btnVerify'), false);
+});
+
+$('btnResend').addEventListener('click', async () => {
+  err($('verifyErr'), '');
+  await apiPost({ action: 'reenviar', email: pendingEmail });
+  $('btnResend').textContent = 'Código reenviado ✓';
+});
+
+$('btnRecover').addEventListener('click', async () => {
+  err($('recErr'), '');
+  const em = $('recEmail').value.trim().toLowerCase();
+  if (!em) { err($('recErr'), 'digite seu email'); return; }
+  busy($('btnRecover'), true, 'Enviando...');
+  try {
+    await apiPost({ action: 'recuperar', email: em });
+    pendingEmail = em;
+    $('resetEmail').textContent = em;
+    show('stepReset');
+  } catch (e) { err($('recErr'), 'falha de conexão, tente de novo'); }
+  busy($('btnRecover'), false);
+});
+
+$('btnReset').addEventListener('click', async () => {
+  err($('resetErr'), '');
+  busy($('btnReset'), true, 'Salvando...');
+  try {
+    const r = await apiPost({ action: 'redefinir', email: pendingEmail, code: $('resetCode').value, password: $('resetPass').value });
+    if (r.ok) {
+      show('stepLogin');
+      err($('loginOk'), 'Senha nova salva! Entre com ela agora.');
+    } else {
+      err($('resetErr'), r.error || 'não foi possível salvar');
+    }
+  } catch (e) { err($('resetErr'), 'falha de conexão, tente de novo'); }
+  busy($('btnReset'), false);
+});
+
+document.querySelectorAll('input').forEach((i) => i.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const map = { stepLogin: 'btnLogin', stepSignup: 'btnSignup', stepVerify: 'btnVerify', stepRecover: 'btnRecover', stepReset: 'btnReset' };
+    for (const [step, btn] of Object.entries(map)) {
+      if (!$(step).hidden) { $(btn).click(); break; }
+    }
+  }
+}));
+</script>
+</body>
+</html>
