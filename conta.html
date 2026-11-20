@@ -160,6 +160,7 @@ $('btnLogin').addEventListener('click', async () => {
 
 $('btnSignup').addEventListener('click', async () => {
   err($('signupErr'), '');
+  if ($('signupPass').value.length < 8) { err($('signupErr'), 'A senha precisa ter pelo menos 8 caracteres'); return; }
   busy($('btnSignup'), true, 'Cadastrando...');
   try {
     const r = await apiPost({ action: 'cadastro', name: $('signupName').value, email: $('signupEmail').value, password: $('signupPass').value });
@@ -207,6 +208,7 @@ $('btnRecover').addEventListener('click', async () => {
 
 $('btnReset').addEventListener('click', async () => {
   err($('resetErr'), '');
+  if ($('resetPass').value.length < 8) { err($('resetErr'), 'A senha precisa ter pelo menos 8 caracteres'); return; }
   busy($('btnReset'), true, 'Salvando...');
   try {
     const r = await apiPost({ action: 'redefinir', email: pendingEmail, code: $('resetCode').value, password: $('resetPass').value });

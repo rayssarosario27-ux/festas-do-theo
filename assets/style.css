@@ -941,6 +941,8 @@ footer {
 .person-btn { width: auto !important; padding: 8px 15px !important; font-size: 12.5px !important; }
 .pb-ok { border-color: rgba(70, 211, 105, 0.55) !important; color: var(--green) !important; }
 .pb-block { border-color: rgba(229, 9, 20, 0.55) !important; color: #ff8f8f !important; }
+.pb-del { border-color: rgba(255, 255, 255, 0.22) !important; color: #b3b3b3 !important; }
+.pb-del:hover { border-color: rgba(229, 9, 20, 0.7) !important; color: #ff6b6b !important; }
 
 /* ---------- legendas ---------- */
 .lb-cap {
@@ -975,3 +977,9 @@ footer {
   text-overflow: ellipsis;
 }
 .f-item .cap-btn:hover { border-color: var(--red); color: #fff; }
+
+/* ---------- mobile: menu não encosta no avatar ---------- */
+@media (max-width: 640px) {
+  .nav-links { gap: 14px; margin-left: 16px; }
+  .nav-links a { font-size: 12px; white-space: nowrap; }
+}

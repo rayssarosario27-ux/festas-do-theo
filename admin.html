@@ -161,7 +161,7 @@
   </div><!-- /mediaView -->
 
   <div id="peopleView" hidden>
-    <p class="people-intro">Quem pediu acesso ao álbum. <b>Liberar</b> deixa a pessoa entrar; <b>bloquear</b> tira o acesso na hora.</p>
+    <p class="people-intro">Quem pediu acesso ao álbum. <b>Liberar</b> deixa a pessoa entrar; <b>bloquear</b> tira o acesso na hora; <b>excluir</b> apaga o cadastro por completo.</p>
     <div id="peopleList"></div>
   </div>
 </div>
@@ -656,19 +656,21 @@ async function loadPeople(onlyBadge) {
   list.forEach((p) => {
     const row = document.createElement('div');
     row.className = 'person-row';
-    const quando = p.criadoEm ? new Date(p.criadoEm).toLocaleDateString('pt-BR') : '';
+    const d = p.criadoEm ? new Date(p.criadoEm) : null;
+    const quando = d ? d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
     row.innerHTML =
       '<div class="person-info"><b></b><span class="person-mail"></span><span class="person-date"></span></div>' +
       '<div class="person-side">' + statusChip(p.status) + '<div class="person-btns"></div></div>';
     row.querySelector('b').textContent = p.nome;
     row.querySelector('.person-mail').textContent = p.email;
-    row.querySelector('.person-date').textContent = 'desde ' + quando;
+    row.querySelector('.person-date').textContent = 'pediu acesso em ' + quando;
     const btns = row.querySelector('.person-btns');
-    function act(label, action, cls) {
+    function act(label, action, cls, confirmMsg) {
       const b = document.createElement('button');
       b.className = 'btn btn-ghost person-btn ' + (cls || '');
       b.textContent = label;
       b.addEventListener('click', async () => {
+        if (confirmMsg && !window.confirm(confirmMsg)) return;
         b.disabled = true;
         b.textContent = '...';
         await apiPost({ action: action, password: pw, email: p.email });
@@ -679,6 +681,7 @@ async function loadPeople(onlyBadge) {
     if (p.status === 'PENDENTE' || p.status === 'VERIFICAR') act('Liberar', 'liberar', 'pb-ok');
     if (p.status === 'APROVADO') act('Bloquear', 'bloquear', 'pb-block');
     if (p.status === 'BLOQUEADO') act('Desbloquear', 'desbloquear', 'pb-ok');
+    act('Excluir', 'excluir', 'pb-del', 'Excluir acesso de ' + p.nome + '?\n\nIsso apaga o cadastro, as sessões ativas e os códigos pendentes. Se a pessoa tentar entrar de novo, será como se nunca tivesse se cadastrado.');
     box.appendChild(row);
   });
 }
