@@ -163,7 +163,7 @@ button { font-family: inherit; cursor: pointer; }
   inset: 0;
   background:
     linear-gradient(to top, var(--bg) 2%, rgba(20, 20, 20, 0.55) 32%, rgba(20, 20, 20, 0.12) 55%, rgba(20, 20, 20, 0.5) 100%),
-    linear-gradient(100deg, rgba(20, 20, 20, 0.85) 0%, transparent 58%);
+    linear-gradient(100deg, rgba(20, 20, 20, 0.82) 0%, rgba(20, 20, 20, 0.55) 24%, rgba(20, 20, 20, 0.25) 44%, transparent 68%);
 }
 .hero-content { position: relative; padding: 0 4vw 9vh; max-width: 720px; }
 .kick {
@@ -983,3 +983,57 @@ footer {
   .nav-links { gap: 14px; margin-left: 16px; }
   .nav-links a { font-size: 12px; white-space: nowrap; }
 }
+
+/* ---------- banner de instalação do app (PWA) ---------- */
+.install-banner {
+  position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 80;
+  display: flex; align-items: center; gap: 12px;
+  background: #1f1f1f; border: 1px solid #3a3a3a; border-radius: 16px;
+  padding: 12px 14px; box-shadow: 0 12px 44px rgba(0, 0, 0, 0.65);
+  animation: ib-in 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+@keyframes ib-in { from { transform: translateY(90px); opacity: 0; } to { transform: none; opacity: 1; } }
+.ib-icon { width: 44px; height: 44px; border-radius: 11px; flex: none; }
+.ib-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ib-txt b { font-size: 14px; color: #fff; }
+.ib-txt span { font-size: 12px; color: #b3b3b3; line-height: 1.35; }
+.ib-btn {
+  flex: none; background: var(--red, #e50914); color: #fff; border: 0; border-radius: 9px;
+  font: 700 13px 'Inter', sans-serif; padding: 10px 16px; cursor: pointer;
+}
+.ib-btn:hover { filter: brightness(1.12); }
+.ib-close { flex: none; background: none; border: 0; color: #999; font-size: 15px; cursor: pointer; padding: 6px; }
+.ib-close:hover { color: #fff; }
+@media (min-width: 721px) {
+  .install-banner { left: auto; right: 24px; bottom: 24px; max-width: 430px; }
+}
+/* destaque do item de instalar no menu do perfil */
+#menuInstall { color: #ffd24d !important; font-weight: 700; }
+
+/* ---------- skeletons de carregamento ---------- */
+@keyframes skel-shimmer { from { background-position: -400px 0; } to { background-position: 400px 0; } }
+.card.skel, .poster.skel {
+  pointer-events: none;
+  background: linear-gradient(90deg, #1b1b1b 25%, #262626 50%, #1b1b1b 75%);
+  background-size: 800px 100%;
+  animation: skel-shimmer 1.3s infinite linear;
+}
+.card.skel img, .poster.skel img { display: none; }
+
+/* ---------- download visível ---------- */
+.lb-dl {
+  width: auto !important; height: 40px; padding: 0 16px !important; gap: 7px;
+  display: inline-flex !important; align-items: center; border-radius: 999px !important;
+  font: 700 13px 'Inter', sans-serif; color: #fff;
+}
+.lb-dl:hover { border-color: #fff; }
+.card-dl {
+  position: absolute; top: 8px; right: 8px; z-index: 3;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: rgba(0, 0, 0, 0.72); border: 1px solid rgba(255, 255, 255, 0.25);
+  display: flex; align-items: center; justify-content: center; color: #fff;
+  opacity: 0; transition: opacity 0.18s;
+}
+.card:hover .card-dl, .card-dl:focus-visible { opacity: 1; }
+.card-dl:hover { background: rgba(0, 0, 0, 0.92); border-color: #fff; }
+@media (hover: none) { .card-dl { opacity: 0.85; } }

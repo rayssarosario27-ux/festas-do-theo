@@ -10,6 +10,9 @@
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://drive.google.com">
+<link rel="preconnect" href="https://lh3.googleusercontent.com">
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/theo-photo.css">
 </head>
@@ -122,7 +125,7 @@ function busy(btn, on, label) {
   if (!t) return;
   try {
     const r = await apiPost({ action: 'sessao', token: t });
-    if (r.ok && r.status === 'APROVADO') { location.replace('catalogo.html'); }
+    if (r.ok && r.status === 'APROVADO') { location.replace('index.html'); }
     else if (r.ok) { location.replace('aguardando.html'); }
   } catch (e) {}
 })();
@@ -144,7 +147,7 @@ $('btnLogin').addEventListener('click', async () => {
     if (r.ok) {
       localStorage.setItem('theo_token', r.token);
       localStorage.setItem('theo_name', r.name || '');
-      location.href = r.status === 'APROVADO' ? 'catalogo.html' : 'aguardando.html';
+      location.href = r.status === 'APROVADO' ? 'index.html' : 'aguardando.html';
       return;
     }
     if (r.needsVerification) {

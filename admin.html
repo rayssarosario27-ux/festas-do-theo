@@ -8,6 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://drive.google.com">
+<link rel="preconnect" href="https://lh3.googleusercontent.com">
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/theo-photo.css">
 <meta name="theme-color" content="#e50914">
@@ -37,7 +40,10 @@
 <div class="admin-panel" id="panel" hidden>
   <div class="admin-head">
     <h1>Painel da família</h1>
-    <button class="btn btn-ghost" id="logoutBtn" style="width:auto;padding:9px 18px;font-size:13px">Sair</button>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" id="admInstall" hidden style="width:auto;padding:9px 18px;font-size:13px">Instalar app</button>
+      <button class="btn btn-ghost" id="logoutBtn" style="width:auto;padding:9px 18px;font-size:13px">Sair</button>
+    </div>
   </div>
 
   <div class="admin-tabs">
@@ -692,6 +698,26 @@ if (new URLSearchParams(location.search).has('cap')) {
   $('panel').hidden = false;
   $('newYearForm').hidden = false;
 }
+// ---------- instalar o painel como app (PWA) ----------
+(function () {
+  let deferred = null;
+  const btn = document.getElementById('admInstall');
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; if (!standalone) btn.hidden = false; });
+  if (ios && !standalone) btn.hidden = false;
+  btn.addEventListener('click', async () => {
+    if (deferred) {
+      deferred.prompt();
+      try { await deferred.userChoice; } catch (e) {}
+      deferred = null;
+      btn.hidden = true;
+    } else if (ios) {
+      alert('Para instalar: toque em Compartilhar e depois em "Adicionar à Tela de Início".');
+    }
+  });
+})();
+
 if (pw) tryLogin(true);
 </script>
 </body>

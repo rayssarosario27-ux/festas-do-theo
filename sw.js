@@ -2,7 +2,7 @@
 // Cacheia só os arquivos estáticos do próprio site.
 // NUNCA cacheia a API (script.google.com) nem mídia (drive.google.com):
 // esses pedidos vão sempre direto para a rede.
-const CACHE = 'festas-theo-v1';
+const CACHE = 'festas-theo-v2';
 const ASSETS = [
   './',
   './index.html',

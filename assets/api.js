@@ -17,16 +17,53 @@ const YEARS = {
   }
 };
 
-async function apiGet(params) {
+// Cache local com TTL + revalidação em background (stale-while-revalidate):
+// a navegação entre páginas mostra o conteúdo na hora e atualiza em seguida.
+const API_TTL = { years: 10 * 60 * 1000, albums: 5 * 60 * 1000, list: 2 * 60 * 1000 };
+
+function cacheRead(key, ttlMs) {
+  try {
+    const o = JSON.parse(localStorage.getItem('theo_c_' + key));
+    if (o && Date.now() - o.t < ttlMs) return o.v;
+  } catch (e) {}
+  return null;
+}
+function cacheWrite(key, val) {
+  try { localStorage.setItem('theo_c_' + key, JSON.stringify({ t: Date.now(), v: val })); } catch (e) {}
+}
+function apiCacheClear() {
+  try {
+    Object.keys(localStorage).filter((k) => k.indexOf('theo_c_') === 0).forEach((k) => localStorage.removeItem(k));
+  } catch (e) {}
+}
+
+async function apiGet(params, onUpdate) {
   if (API_URL === 'PENDING_DEPLOY') return { ok: true, pending: true, photos: [], videos: [] };
   const qs = new URLSearchParams(params).toString();
-  const r = await fetch(API_URL + '?' + qs);
-  return r.json();
+  const ttl = API_TTL[params.action] || 60 * 1000;
+  const cached = cacheRead(qs, ttl);
+  const fetchFresh = async () => {
+    const r = await fetch(API_URL + '?' + qs);
+    const j = await r.json();
+    if (j && j.ok) {
+      const antes = cached ? JSON.stringify(cached) : null;
+      cacheWrite(qs, j);
+      if (antes && onUpdate && JSON.stringify(j) !== antes) { try { onUpdate(j); } catch (e) {} }
+    }
+    return j;
+  };
+  if (cached) { fetchFresh().catch(() => {}); return cached; }
+  return fetchFresh();
 }
+
+// Ações do painel que mudam o conteúdo: invalidam o cache local depois do POST.
+const API_MUTATIONS = ['uploadFinish', 'delete', 'createYear', 'setCover', 'setMainCover', 'createAlbum', 'updateAlbum', 'setCaption'];
 
 async function apiPost(payload) {
   const r = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
-  return r.json();
+  const j = await r.json();
+  if (j && j.ok && payload && API_MUTATIONS.indexOf(payload.action) >= 0) apiCacheClear();
+  return j;
 }
 
 // URL pública de thumbnail de um arquivo do Drive da família.

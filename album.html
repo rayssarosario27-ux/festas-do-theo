@@ -10,6 +10,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://drive.google.com">
+<link rel="preconnect" href="https://lh3.googleusercontent.com">
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/theo-photo.css">
 <link rel="icon" type="image/png" href="assets/favicon.png">
@@ -59,7 +62,7 @@
 
 <div class="lightbox" id="lb">
   <a class="lb-close lb-dl" id="lbDl" href="#" target="_blank" rel="noopener" title="Baixar" aria-label="Baixar">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 20h16"/></svg>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 20h16"/></svg><span>Baixar</span>
   </a>
   <button class="lb-close" id="lbClose" aria-label="Fechar">✕</button>
   <button class="lb-nav lb-prev" id="lbPrev" aria-label="Anterior">‹</button>
@@ -86,9 +89,22 @@ function cardFor(it, kind, list, idx) {
   el.className = 'card';
   const img = document.createElement('img');
   img.loading = 'lazy';
+  img.decoding = 'async';
   img.src = it.thumb.replace('w1600', 'w800');
   img.alt = it.caption || 'Foto do Théo';
   el.appendChild(img);
+  if (it.download) {
+    const dl = document.createElement('a');
+    dl.className = 'card-dl';
+    dl.href = it.download;
+    dl.target = '_blank';
+    dl.rel = 'noopener';
+    dl.title = 'Baixar';
+    dl.setAttribute('aria-label', 'Baixar');
+    dl.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 20h16"/></svg>';
+    dl.addEventListener('click', (e) => e.stopPropagation());
+    el.appendChild(dl);
+  }
   if (isNew(it.created)) {
     const b = document.createElement('span');
     b.className = 'badge-new';
@@ -140,6 +156,11 @@ function renderLb() {
     img.alt = it.caption || 'Foto do Théo';
     media.appendChild(img);
   }
+  // pré-carrega a foto anterior e a próxima da lightbox para navegar sem espera
+  [1, -1].forEach((d) => {
+    const n = lbList[(lbIndex + d + lbList.length) % lbList.length];
+    if (n && n.kind === 'photo') { const pi = new Image(); pi.src = n.thumb.replace('w1600', 'w2048'); }
+  });
   document.getElementById('lbCount').textContent = (lbIndex + 1) + ' / ' + lbList.length;
   const capEl = document.getElementById('lbCap');
   capEl.textContent = it.caption || '';
@@ -160,8 +181,25 @@ document.addEventListener('keydown', (e) => {
 
 async function init() {
   if (!slug) { location.replace('crescendo.html'); return; }
+  skelGaleria();
   let data = { photos: [], videos: [], meta: null };
-  try { data = await apiGet({ action: 'list', album: slug }); } catch (e) {}
+  try { data = await apiGet({ action: 'list', album: slug }, renderGaleria); } catch (e) {}
+  renderMeta(data);
+  renderGaleria(data);
+}
+
+function skelGaleria() {
+  const rail = document.getElementById('scrollPhotos');
+  rail.innerHTML = '';
+  for (let i = 0; i < 6; i++) {
+    const s = document.createElement('div');
+    s.className = 'card skel';
+    rail.appendChild(s);
+  }
+  document.getElementById('rowPhotos').hidden = false;
+}
+
+function renderMeta(data) {
   const meta = data.meta || { nome: 'Álbum', desc: '' };
   if (meta.coverFileId) document.querySelector('.hero-bg').style.backgroundImage = "url('" + coverUrl(meta.coverFileId, 2048) + "')";
   document.title = meta.nome + ' • Festas do Théo';
@@ -169,16 +207,25 @@ async function init() {
   document.getElementById('synopsis').textContent = meta.desc || 'Momentos guardados para sempre.';
   document.getElementById('soonBig').textContent = meta.nome.toUpperCase();
 
+}
+
+function renderGaleria(data) {
   const photos = (data.photos || []).map((p) => Object.assign({ kind: 'photo' }, p));
   const videos = (data.videos || []).map((v) => Object.assign({ kind: 'video' }, v));
   const coming = document.getElementById('coming');
+  const sp = document.getElementById('scrollPhotos');
+  const sv = document.getElementById('scrollVideos');
+  sp.innerHTML = '';
+  sv.innerHTML = '';
   if (photos.length) {
     document.getElementById('rowPhotos').hidden = false;
-    photos.forEach((p, i) => document.getElementById('scrollPhotos').appendChild(cardFor(p, 'photo', photos, i)));
+    photos.forEach((p, i) => sp.appendChild(cardFor(p, 'photo', photos, i)));
+  } else {
+    document.getElementById('rowPhotos').hidden = true;
   }
   if (videos.length) {
     document.getElementById('rowVideos').hidden = false;
-    videos.forEach((v, i) => document.getElementById('scrollVideos').appendChild(cardFor(v, 'video', videos, i)));
+    videos.forEach((v, i) => sv.appendChild(cardFor(v, 'video', videos, i)));
   }
   coming.hidden = photos.length > 0 || videos.length > 0;
   document.getElementById('btnVideos').style.display = videos.length ? '' : 'none';

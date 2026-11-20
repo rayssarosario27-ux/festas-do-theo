@@ -10,6 +10,9 @@
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://drive.google.com">
+<link rel="preconnect" href="https://lh3.googleusercontent.com">
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/theo-photo.css">
 </head>
@@ -52,6 +55,7 @@ document.getElementById('btnOut').addEventListener('click', async () => {
   try { if (t) await apiPost({ action: 'logout', token: t }); } catch (e) {}
   localStorage.removeItem('theo_token');
   localStorage.removeItem('theo_name');
+  try { if (typeof apiCacheClear === 'function') apiCacheClear(); } catch (e) {}
   location.href = 'conta.html';
 });
 </script>
