@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Painel da família • Festas do Théo</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/theo-photo.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎂</text></svg>">
+</head>
+<body>
+
+<div class="login-bg theo-photo-bg" id="loginBg"></div>
+
+<div class="admin-body" id="loginView">
+  <div class="admin-card">
+    <span class="admin-wordmark">FESTAS DO THÉO</span>
+    <h1>Painel da família</h1>
+    <p class="sub">Área da família para colocar fotos e vídeos no álbum do Théo.</p>
+    <div class="field">
+      <label for="pw">Senha</label>
+      <input type="password" id="pw" autocomplete="current-password" placeholder="Digite a senha">
+    </div>
+    <button class="btn" id="loginBtn">Entrar</button>
+    <div class="login-error" id="loginError"></div>
+    <p style="margin-top:18px"><a href="catalogo.html" style="color:var(--muted);font-size:12.5px;text-decoration:none">← Voltar ao álbum</a></p>
+  </div>
+</div>
+
+<div class="admin-panel" id="panel" hidden>
+  <div class="admin-head">
+    <h1>Painel da família</h1>
+    <button class="btn btn-ghost" id="logoutBtn" style="width:auto;padding:9px 18px;font-size:13px">Sair</button>
+  </div>
+
+  <div class="year-row" id="yearRow">
+    <button class="year-add" id="addYearBtn">+ Novo ano</button>
+  </div>
+
+  <div class="newyear" id="newYearForm" hidden>
+    <h3>Nova festa</h3>
+    <div class="field">
+      <label for="nyNum">Aniversário</label>
+      <input type="text" id="nyNum" inputmode="numeric" placeholder="5">
+    </div>
+    <div class="field">
+      <label for="nyInvite">Link do convite <span class="req">(obrigatório)</span></label>
+      <input type="url" id="nyInvite" placeholder="https://theo-5-anos.pages.dev/">
+    </div>
+    <div class="field">
+      <label for="nyTheme">Tema da festa</label>
+      <input type="text" id="nyTheme" placeholder="Ex.: Homem-Aranha">
+    </div>
+    <div class="field">
+      <label for="nyDate">Data da festa</label>
+      <input type="text" id="nyDate" placeholder="Ex.: 12 de dezembro de 2027">
+    </div>
+    <div class="field">
+      <label for="nyPlace">Local</label>
+      <input type="text" id="nyPlace" placeholder="Ex.: Salão Espaço Magnata • Cosmos">
+    </div>
+    <button class="btn" id="nyCreate">Criar ano no álbum</button>
+    <div class="login-error" id="nyError"></div>
+  </div>
+
+  <div class="covers">
+    <div class="cover-box">
+      <h3>Capa do ano: <span id="coverYearLabel">4 anos</span></h3>
+      <div class="cover-preview" id="coverYearPreview">Sem capa personalizada</div>
+      <div class="cover-status" id="coverYearStatus"></div>
+      <div class="cover-btns">
+        <button class="btn btn-ghost" id="coverYearUpload">Enviar capa</button>
+        <button class="btn btn-ghost" id="coverYearPick">Escolher das fotos</button>
+      </div>
+    </div>
+    <div class="cover-box">
+      <h3>Capa principal do site</h3>
+      <div class="cover-preview" id="coverMainPreview">Padrão: foto do Théo</div>
+      <div class="cover-status" id="coverMainStatus"></div>
+      <div class="cover-btns">
+        <button class="btn btn-ghost" id="coverMainUpload">Enviar capa</button>
+        <button class="btn btn-ghost" id="coverMainPick">Escolher das fotos</button>
+      </div>
+    </div>
+  </div>
+  <input type="file" id="coverInput" accept="image/*" hidden>
+
+  <div class="usage" id="usage" hidden>
+    <div class="label"><span>Espaço no Google Drive</span><span id="usageText"></span></div>
+    <div class="bar"><div class="fill" id="usageFill"></div></div>
+  </div>
+
+  <div class="drop" id="drop">
+    <div class="big">Toque para escolher fotos e vídeos</div>
+    <div class="small">Elas vão direto para o Google Drive da família e aparecem no site.<br>
+    Vídeos com mais de 90 MB: suba pelo app do Google Drive na pasta <b>Festas do Théo</b> que eles aparecem aqui do mesmo jeito.</div>
+    <input type="file" id="fileInput" accept="image/*,video/*" multiple hidden>
+  </div>
+
+  <div class="queue" id="queue"></div>
+
+  <h2 class="files-title">No álbum agora</h2>
+  <div class="files-grid" id="filesGrid"></div>
+
+  <div class="picker" id="picker" hidden>
+    <div class="picker-box">
+      <div class="picker-head">
+        <h3 id="pickerTitle">Escolher capa</h3>
+        <button class="btn btn-ghost" id="pickerClose" style="width:auto;padding:8px 16px;font-size:12.5px">Fechar</button>
+      </div>
+      <div class="files-grid" id="pickerGrid"></div>
+    </div>
+  </div>
+
+  <p class="admin-note">
+    Tudo que é enviado por aqui fica guardado na pasta <b>Festas do Théo</b> do Google Drive da família, para sempre.
+    O site apenas mostra o que está lá. Apagar aqui manda o arquivo para a lixeira do Drive (dá para recuperar por 30 dias).
+  </p>
+</div>
+
+<script src="assets/api.js"></script>
+<script>
+const PW_KEY = 'ft_admin_pw';
+let pw = sessionStorage.getItem(PW_KEY) || '';
+let currentYear = 4;
+let yearFolders = [];
+
+const $ = (id) => document.getElementById(id);
+
+function fmtBytes(n) {
+  if (n > 1073741824) return (n / 1073741824).toFixed(1).replace('.', ',') + ' GB';
+  if (n > 1048576) return (n / 1048576).toFixed(0) + ' MB';
+  return Math.round(n / 1024) + ' KB';
+}
+
+async function tryLogin(silent) {
+  const val = silent ? pw : $('pw').value.trim();
+  if (!val) return;
+  $('loginError').textContent = '';
+  $('loginBtn').disabled = true;
+  $('loginBtn').textContent = 'Entrando...';
+  try {
+    const r = await apiPost({ action: 'login', password: val });
+    if (r.ok) {
+      pw = val;
+      sessionStorage.setItem(PW_KEY, pw);
+      showPanel();
+    } else {
+      sessionStorage.removeItem(PW_KEY);
+      if (!silent) $('loginError').textContent = 'Senha incorreta. Tenta de novo.';
+    }
+  } catch (e) {
+    if (!silent) $('loginError').textContent = 'Não consegui falar com o servidor. Tenta de novo.';
+  }
+  $('loginBtn').disabled = false;
+  $('loginBtn').textContent = 'Entrar';
+}
+
+function showPanel() {
+  $('loginBg').style.display = 'none';
+  $('loginView').style.display = 'none';
+  $('panel').hidden = false;
+  loadStats();
+  loadFiles();
+  loadCovers();
+}
+
+$('loginBtn').addEventListener('click', () => tryLogin(false));
+$('pw').addEventListener('keydown', (e) => { if (e.key === 'Enter') tryLogin(false); });
+$('logoutBtn').addEventListener('click', () => {
+  sessionStorage.removeItem(PW_KEY);
+  location.reload();
+});
+
+/* ---------- anos ---------- */
+function renderYearChips() {
+  const row = $('yearRow');
+  row.querySelectorAll('.year-chip').forEach((c) => c.remove());
+  yearFolders.forEach((y) => {
+    const b = document.createElement('button');
+    b.className = 'year-chip' + (y.num === currentYear ? ' on' : '');
+    b.textContent = y.label;
+    b.addEventListener('click', () => { currentYear = y.num; renderYearChips(); loadFiles(); });
+    row.insertBefore(b, $('addYearBtn'));
+  });
+}
+
+$('addYearBtn').addEventListener('click', () => {
+  const form = $('newYearForm');
+  form.hidden = !form.hidden;
+  if (!form.hidden) {
+    const last = yearFolders.length ? Math.max.apply(null, yearFolders.map((y) => y.num)) : 3;
+    $('nyNum').value = last + 1;
+    $('nyInvite').focus();
+  }
+});
+
+$('nyCreate').addEventListener('click', async () => {
+  $('nyError').textContent = '';
+  const num = $('nyNum').value.trim();
+  const invite = $('nyInvite').value.trim();
+  const theme = $('nyTheme').value.trim();
+  const date = $('nyDate').value.trim();
+  const place = $('nyPlace').value.trim();
+  if (!num || isNaN(Number(num))) { $('nyError').textContent = 'Confere o número do aniversário.'; return; }
+  if (!invite || invite.indexOf('http') !== 0) { $('nyError').textContent = 'Cola o link do convite desse ano (começa com http).'; return; }
+  $('nyCreate').disabled = true;
+  $('nyCreate').textContent = 'Criando...';
+  const r = await apiPost({
+    action: 'createYear', password: pw, ano: num,
+    invite: invite, theme: theme, date: date, place: place
+  });
+  $('nyCreate').disabled = false;
+  $('nyCreate').textContent = 'Criar ano no álbum';
+  if (r.ok) {
+    $('newYearForm').hidden = true;
+    $('nyInvite').value = ''; $('nyTheme').value = ''; $('nyDate').value = ''; $('nyPlace').value = '';
+    currentYear = Number(num);
+    await loadStats();
+    renderYearChips();
+    loadFiles();
+  } else {
+    $('nyError').textContent = 'Não consegui criar. Tenta de novo.';
+  }
+});
+
+/* ---------- capas ---------- */
+let yearsCfg = {};
+let mainCover = '';
+let coverTarget = 'year';
+
+async function loadCovers() {
+  try {
+    const r = await apiGet({ action: 'years' });
+    if (r.ok && r.years) { yearsCfg = r.years; mainCover = r.mainCover || ''; }
+  } catch (e) {}
+  renderCovers();
+}
+
+function renderCovers() {
+  const y = yearsCfg[String(currentYear)];
+  const yp = $('coverYearPreview');
+  $('coverYearLabel').textContent = currentYear + ' anos';
+  if (y && y.coverFileId) {
+    yp.style.backgroundImage = "url('" + coverUrl(y.coverFileId, 800) + "')";
+    yp.classList.add('has');
+    yp.textContent = '';
+  } else {
+    yp.style.backgroundImage = 'none';
+    yp.classList.remove('has');
+    yp.textContent = 'Sem capa personalizada';
+  }
+  const mp = $('coverMainPreview');
+  if (mainCover) {
+    mp.style.backgroundImage = "url('" + coverUrl(mainCover, 800) + "')";
+    mp.classList.add('has');
+    mp.textContent = '';
+  } else {
+    mp.style.backgroundImage = 'none';
+    mp.classList.remove('has');
+    mp.textContent = 'Padrão: foto do Théo';
+  }
+}
+
+function coverStatus(msg, cls) {
+  const el = $(coverTarget === 'year' ? 'coverYearStatus' : 'coverMainStatus');
+  el.textContent = msg;
+  el.className = 'cover-status ' + (cls || '');
+}
+
+$('coverYearUpload').addEventListener('click', () => { coverTarget = 'year'; $('coverInput').click(); });
+$('coverMainUpload').addEventListener('click', () => { coverTarget = 'main'; $('coverInput').click(); });
+$('coverInput').addEventListener('change', async () => {
+  const f = $('coverInput').files[0];
+  $('coverInput').value = '';
+  if (!f) return;
+  try {
+    coverStatus('enviando capa...');
+    const id = await uploadFile(f, (p) => coverStatus('enviando capa... ' + p + '%'));
+    const action = coverTarget === 'year' ? 'setCover' : 'setMainCover';
+    const r = await apiPost({ action: action, password: pw, ano: String(currentYear), fileId: id });
+    if (!r.ok) throw new Error('falha');
+    coverStatus('capa atualizada', 'done');
+    loadCovers();
+    loadFiles();
+  } catch (e) {
+    coverStatus('erro: ' + e.message, 'err');
+  }
+});
+
+let pickerTarget = 'year';
+$('coverYearPick').addEventListener('click', () => openPicker('year'));
+$('coverMainPick').addEventListener('click', () => openPicker('main'));
+$('pickerClose').addEventListener('click', () => { $('picker').hidden = true; });
+
+async function openPicker(target) {
+  pickerTarget = target;
+  $('picker').hidden = false;
+  $('pickerTitle').textContent = target === 'year' ? 'Capa do ano: ' + currentYear + ' anos' : 'Capa principal do site';
+  const grid = $('pickerGrid');
+  grid.innerHTML = '<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Carregando fotos...</p>';
+  const r = await apiGet({ action: 'list', ano: String(currentYear) });
+  grid.innerHTML = '';
+  const photos = r.photos || [];
+  if (!photos.length) {
+    grid.innerHTML = '<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Sem fotos em ' + currentYear + ' anos ainda. Use "Enviar capa".</p>';
+    return;
+  }
+  photos.forEach((f) => {
+    const el = document.createElement('div');
+    el.className = 'f-item';
+    const img = document.createElement('img');
+    img.loading = 'lazy';
+    img.src = f.thumb.replace('w1600', 'w400');
+    el.appendChild(img);
+    el.addEventListener('click', async () => {
+      $('picker').hidden = true;
+      const action = pickerTarget === 'year' ? 'setCover' : 'setMainCover';
+      await apiPost({ action: action, password: pw, ano: String(currentYear), fileId: f.id });
+      loadCovers();
+    });
+    grid.appendChild(el);
+  });
+}
+
+/* ---------- estatísticas ---------- */
+async function loadStats() {
+  const r = await apiPost({ action: 'stats', password: pw });
+  if (!r.ok) return;
+  $('usage').hidden = false;
+  $('usageText').textContent = fmtBytes(r.used) + ' de ' + fmtBytes(r.limit);
+  $('usageFill').style.width = Math.min(100, (r.used / r.limit) * 100).toFixed(1) + '%';
+  yearFolders = (r.years || [])
+    .map((y) => ({ num: parseInt(y.name, 10), label: y.name }))
+    .filter((y) => !isNaN(y.num));
+  if (!yearFolders.some((y) => y.num === 4)) yearFolders.unshift({ num: 4, label: '4 anos' });
+  yearFolders.sort((a, b) => a.num - b.num);
+  renderYearChips();
+}
+
+/* ---------- upload ---------- */
+const CHUNK = 12 * 1024 * 1024;
+const MAX_DIRECT = 8 * 1024 * 1024;
+const MAX_FILE = 90 * 1024 * 1024;
+
+$('drop').addEventListener('click', () => $('fileInput').click());
+$('drop').addEventListener('dragover', (e) => { e.preventDefault(); $('drop').classList.add('over'); });
+$('drop').addEventListener('dragleave', () => $('drop').classList.remove('over'));
+$('drop').addEventListener('drop', (e) => {
+  e.preventDefault();
+  $('drop').classList.remove('over');
+  handleFiles(e.dataTransfer.files);
+});
+$('fileInput').addEventListener('change', () => {
+  handleFiles($('fileInput').files);
+  $('fileInput').value = '';
+});
+
+function readAsBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(fr.result.split(',')[1]);
+    fr.onerror = reject;
+    fr.readAsDataURL(blob);
+  });
+}
+
+function queueItem(name) {
+  const el = document.createElement('div');
+  el.className = 'q-item';
+  el.innerHTML = '<div class="q-top"><span class="q-name"></span><span class="q-status">na fila</span></div><div class="q-bar"><div class="q-fill"></div></div>';
+  el.querySelector('.q-name').textContent = name;
+  $('queue').appendChild(el);
+  return el;
+}
+
+// Sobe um arquivo para a pasta do ano atual e retorna o fileId do Drive.
+async function uploadFile(file, onProgress) {
+  const prog = onProgress || (() => {});
+  if (file.size <= MAX_DIRECT) {
+    prog(40);
+    const data = await readAsBase64(file);
+    prog(70);
+    const r = await apiPost({ action: 'uploadDirect', password: pw, ano: String(currentYear), name: file.name, mime: file.type, data: data });
+    if (!r.ok) throw new Error(r.error || 'falha');
+    prog(100);
+    return r.id;
+  }
+  const start = await apiPost({ action: 'uploadStart', password: pw });
+  if (!start.ok) throw new Error('falha ao iniciar');
+  const total = Math.ceil(file.size / CHUNK);
+  for (let i = 0; i < total; i++) {
+    const slice = file.slice(i * CHUNK, (i + 1) * CHUNK);
+    const data = await readAsBase64(slice);
+    const r = await apiPost({ action: 'uploadChunk', password: pw, uploadId: start.uploadId, index: i, data: data });
+    if (!r.ok) throw new Error(r.error || 'falha');
+    prog(Math.round(((i + 1) / (total + 1)) * 100));
+  }
+  const fin = await apiPost({ action: 'uploadFinish', password: pw, uploadId: start.uploadId, ano: String(currentYear), name: file.name, mime: file.type });
+  if (!fin.ok) throw new Error(fin.error || 'falha');
+  prog(100);
+  return fin.id;
+}
+
+async function handleFiles(list) {
+  for (const file of Array.from(list)) {
+    const el = queueItem(file.name);
+    const status = el.querySelector('.q-status');
+    const fill = el.querySelector('.q-fill');
+    try {
+      if (file.size > MAX_FILE) {
+        status.textContent = 'maior que 90 MB: suba pelo app do Drive';
+        status.classList.add('err');
+        continue;
+      }
+      status.textContent = 'enviando...';
+      await uploadFile(file, (p) => { fill.style.width = p + '%'; if (p >= 99) status.textContent = 'finalizando...'; });
+      status.textContent = 'pronto';
+      status.classList.add('done');
+    } catch (e) {
+      status.textContent = 'erro: ' + e.message;
+      status.classList.add('err');
+    }
+  }
+  loadFiles();
+  loadStats();
+}
+
+/* ---------- arquivos ---------- */
+async function loadFiles() {
+  const grid = $('filesGrid');
+  grid.innerHTML = '<div class="skel" style="height:108px"></div><div class="skel" style="height:108px"></div><div class="skel" style="height:108px"></div>';
+  const r = await apiGet({ action: 'list', ano: String(currentYear) });
+  grid.innerHTML = '';
+  const all = (r.photos || []).map((p) => Object.assign({ kind: 'foto' }, p))
+    .concat((r.videos || []).map((v) => Object.assign({ kind: 'vídeo' }, v)))
+    .sort((a, b) => (a.created < b.created ? 1 : -1));
+  if (!all.length) {
+    grid.innerHTML = '<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Nada neste ano ainda. As fotos e vídeos que você enviar aparecem aqui.</p>';
+    return;
+  }
+  all.forEach((f) => {
+    const el = document.createElement('div');
+    el.className = 'f-item';
+    const img = document.createElement('img');
+    img.loading = 'lazy';
+    img.src = f.thumb.replace('w1600', 'w400');
+    el.appendChild(img);
+    const kind = document.createElement('span');
+    kind.className = 'kind';
+    kind.textContent = f.kind;
+    el.appendChild(kind);
+    const del = document.createElement('button');
+    del.className = 'del';
+    del.textContent = '✕';
+    del.title = 'Apagar';
+    del.addEventListener('click', async () => {
+      if (!window.confirm('Apagar "' + f.name + '"? Vai para a lixeira do Drive (dá para recuperar por 30 dias).')) return;
+      del.disabled = true;
+      const rr = await apiPost({ action: 'delete', password: pw, ano: String(currentYear), fileId: f.id });
+      if (rr.ok) { el.remove(); } else { del.disabled = false; }
+    });
+    el.appendChild(del);
+    grid.appendChild(el);
+  });
+}
+
+if (new URLSearchParams(location.search).has('cap')) {
+  $('loginBg').style.display = 'none';
+  $('loginView').style.display = 'none';
+  $('panel').hidden = false;
+  $('newYearForm').hidden = false;
+}
+if (pw) tryLogin(true);
+</script>
+</body>
+</html>
