@@ -71,6 +71,29 @@ function coverUrl(fileId, w) {
   return 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w' + (w || 2048);
 }
 
+// Largura ideal do hero conforme a tela (economia grande de bytes no mobile/desktop).
+function heroWidth() { return window.innerWidth < 720 ? 900 : 1400; }
+
+// boot: sessão + catálogo (anos, capa principal, álbuns) numa chamada só, com SWR.
+async function apiBoot(onUpdate) {
+  const t = (typeof authToken === 'function') ? authToken() : '';
+  if (!t) return null;
+  const key = 'boot';
+  const ttl = 2 * 60 * 1000;
+  const cached = cacheRead(key, ttl);
+  const fetchFresh = async () => {
+    const j = await apiPost({ action: 'boot', token: t });
+    if (j && j.ok) {
+      const antes = cached ? JSON.stringify(cached) : null;
+      cacheWrite(key, j);
+      if (antes && onUpdate && JSON.stringify(j) !== antes) { try { onUpdate(j); } catch (e) {} }
+    }
+    return j;
+  };
+  if (cached) { fetchFresh().catch(() => {}); return cached; }
+  return fetchFresh();
+}
+
 // Configuração dos anos (tema, data, local, link do convite, capa) + capa principal.
 // Retorna { years, mainCover }, mesclando API + fallback.
 async function apiYears() {

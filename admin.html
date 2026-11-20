@@ -167,7 +167,16 @@
   </div><!-- /mediaView -->
 
   <div id="peopleView" hidden>
-    <p class="people-intro">Quem pediu acesso ao álbum. <b>Liberar</b> deixa a pessoa entrar; <b>bloquear</b> tira o acesso na hora; <b>excluir</b> apaga o cadastro por completo.</p>
+    <div class="total-card" id="totalCard"><span class="tc-num" id="totalNum">0</span><span class="tc-label">pessoas cadastradas</span></div>
+    <div class="people-tabs">
+      <button class="people-tab on" id="ptPend">Pedidos a serem aprovados <span class="tab-badge" id="pendBadge" hidden></span></button>
+      <button class="people-tab" id="ptFree">Acessos liberados</button>
+      <button class="people-tab" id="ptOnline">Online <span class="online-dot" id="onlineDot" hidden></span></button>
+    </div>
+    <div class="people-search">
+      <input type="search" id="peopleSearch" placeholder="Pesquisar por nome ou email" autocomplete="off">
+    </div>
+    <p class="people-intro" id="peopleIntro"></p>
     <div id="peopleList"></div>
   </div>
 </div>
@@ -644,18 +653,32 @@ function statusChip(st) {
   return '<span class="st-chip ' + m[1] + '">' + m[0] + '</span>';
 }
 
-async function loadPeople(onlyBadge) {
-  let r;
-  try { r = await apiPost({ action: 'pessoas', password: pw }); } catch (e) { return; }
-  if (!r.ok) return;
-  const list = r.pessoas || [];
-  const pend = list.filter((p) => p.status === 'PENDENTE').length;
-  $('peopleBadge').hidden = pend === 0;
-  $('peopleBadge').textContent = pend;
-  if (onlyBadge) return;
+let PEOPLE = [];
+let peopleTab = 'pend';
+
+const PEOPLE_INTROS = {
+  pend: 'Quem pediu acesso e espera a sua liberação. <b>Liberar</b> deixa a pessoa entrar.',
+  free: 'Quem tem acesso liberado ao álbum. <b>Bloquear</b> tira o acesso na hora; <b>excluir</b> apaga o cadastro.',
+  online: 'Quem está com o álbum aberto agora (atividade nos últimos 3 minutos).'
+};
+
+function peopleFilter(p) {
+  if (peopleTab === 'pend') return p.status === 'PENDENTE' || p.status === 'VERIFICAR';
+  if (peopleTab === 'free') return p.status === 'APROVADO' || p.status === 'BLOQUEADO';
+  return p.online;
+}
+
+function renderPeople() {
   const box = $('peopleList');
+  const q = ($('peopleSearch').value || '').trim().toLowerCase();
+  $('peopleIntro').innerHTML = PEOPLE_INTROS[peopleTab];
+  let list = PEOPLE.filter(peopleFilter);
+  if (q) list = list.filter((p) => (p.nome || '').toLowerCase().indexOf(q) >= 0 || (p.email || '').toLowerCase().indexOf(q) >= 0);
   if (!list.length) {
-    box.innerHTML = '<p style="color:var(--muted);font-size:13.5px">Ninguém pediu acesso ainda. Quando alguém se cadastrar no site, aparece aqui.</p>';
+    const vazio = peopleTab === 'online'
+      ? 'Ninguém online agora.'
+      : (q ? 'Ninguém encontrado com \"' + q + '\".' : (peopleTab === 'pend' ? 'Nenhum pedido esperando aprovação.' : 'Ninguém com acesso liberado ainda.'));
+    box.innerHTML = '<p style="color:var(--muted);font-size:13.5px">' + vazio + '</p>';
     return;
   }
   box.innerHTML = '';
@@ -664,9 +687,10 @@ async function loadPeople(onlyBadge) {
     row.className = 'person-row';
     const d = p.criadoEm ? new Date(p.criadoEm) : null;
     const quando = d ? d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+    const online = p.online ? '<span class="st-chip st-online">● online agora</span>' : '';
     row.innerHTML =
       '<div class="person-info"><b></b><span class="person-mail"></span><span class="person-date"></span></div>' +
-      '<div class="person-side">' + statusChip(p.status) + '<div class="person-btns"></div></div>';
+      '<div class="person-side">' + statusChip(p.status) + online + '<div class="person-btns"></div></div>';
     row.querySelector('b').textContent = p.nome;
     row.querySelector('.person-mail').textContent = p.email;
     row.querySelector('.person-date').textContent = 'pediu acesso em ' + quando;
@@ -691,6 +715,34 @@ async function loadPeople(onlyBadge) {
     box.appendChild(row);
   });
 }
+
+async function loadPeople(onlyBadge) {
+  let r;
+  try { r = await apiPost({ action: 'pessoas', password: pw }); } catch (e) { return; }
+  if (!r.ok) return;
+  PEOPLE = r.pessoas || [];
+  const pend = PEOPLE.filter((p) => p.status === 'PENDENTE' || p.status === 'VERIFICAR').length;
+  $('peopleBadge').hidden = pend === 0;
+  $('peopleBadge').textContent = pend;
+  $('pendBadge').hidden = pend === 0;
+  $('pendBadge').textContent = pend;
+  $('totalNum').textContent = PEOPLE.length;
+  const on = PEOPLE.filter((p) => p.online).length;
+  $('onlineDot').hidden = on === 0;
+  if (onlyBadge) return;
+  renderPeople();
+}
+
+[['ptPend', 'pend'], ['ptFree', 'free'], ['ptOnline', 'online']].forEach(([id, tab]) => {
+  $(id).addEventListener('click', () => {
+    peopleTab = tab;
+    document.querySelectorAll('.people-tab').forEach((b) => b.classList.remove('on'));
+    $(id).classList.add('on');
+    renderPeople();
+  });
+});
+$('peopleSearch').addEventListener('input', renderPeople);
+setInterval(() => { if (!$('peopleView').hidden) loadPeople(false); }, 30000);
 
 if (new URLSearchParams(location.search).has('cap')) {
   $('loginBg').style.display = 'none';

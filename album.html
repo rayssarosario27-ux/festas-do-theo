@@ -179,11 +179,11 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowRight') stepLb(1);
 });
 
-async function init() {
+async function init(dataP) {
   if (!slug) { location.replace('crescendo.html'); return; }
   skelGaleria();
   let data = { photos: [], videos: [], meta: null };
-  try { data = await apiGet({ action: 'list', album: slug }, renderGaleria); } catch (e) {}
+  try { data = await dataP; } catch (e) {}
   renderMeta(data);
   renderGaleria(data);
 }
@@ -201,7 +201,7 @@ function skelGaleria() {
 
 function renderMeta(data) {
   const meta = data.meta || { nome: 'Álbum', desc: '' };
-  if (meta.coverFileId) document.querySelector('.hero-bg').style.backgroundImage = "url('" + coverUrl(meta.coverFileId, 2048) + "')";
+  if (meta.coverFileId) document.querySelector('.hero-bg').style.backgroundImage = "url('" + coverUrl(meta.coverFileId, heroWidth()) + "')";
   document.title = meta.nome + ' • Festas do Théo';
   document.getElementById('title').textContent = meta.nome.toUpperCase();
   document.getElementById('synopsis').textContent = meta.desc || 'Momentos guardados para sempre.';
@@ -232,10 +232,11 @@ function renderGaleria(data) {
 }
 
 (async () => {
+  const dataP = apiGet({ action: 'list', album: slug }, renderGaleria); // paralelo com a sessão
   const u = await requireAuth();
   if (!u) return;
   buildNav('crescendo', u);
-  init();
+  init(dataP);
 })();
 </script>
 </body>

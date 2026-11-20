@@ -68,10 +68,10 @@ function albumCard(a) {
   return el;
 }
 
-async function init() {
+async function init(albP) {
   let albums = {};
   try {
-    const r = await apiGet({ action: 'albums' });
+    const r = await albP;
     if (r.ok) albums = r.albums || {};
   } catch (e) {}
   const list = Object.values(albums).sort((a, b) => (a.criadoEm < b.criadoEm ? -1 : 1));
@@ -81,10 +81,11 @@ async function init() {
 }
 
 (async () => {
+  const albP = apiGet({ action: 'albums' }); // paralelo com a sessão
   const u = await requireAuth();
   if (!u) return;
   buildNav('crescendo', u);
-  init();
+  init(albP);
 })();
 </script>
 </body>

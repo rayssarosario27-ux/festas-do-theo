@@ -213,14 +213,23 @@ function cardFor(it, kind, href) {
   return a;
 }
 
-async function init() {
-  const res = await apiYears();
+async function init(bootP) {
+  let res = null;
+  try {
+    const b = await bootP;
+    if (b && b.ok && b.years) {
+      const merged = Object.assign({}, YEARS);
+      Object.keys(b.years).forEach((k) => { merged[k] = Object.assign({}, YEARS[k] || {}, b.years[k]); });
+      res = { years: merged, mainCover: b.mainCover || '' };
+    }
+  } catch (e) {}
+  if (!res) res = await apiYears();
   const cfg = res.years;
   const nums = Object.keys(cfg).map(Number).filter((n) => !isNaN(n)).sort((a, b) => a - b);
   const latest = nums.length ? nums[nums.length - 1] : 4;
   const Y = cfg[String(latest)] || YEARS['4'];
 
-  if (res.mainCover) document.querySelector('.hero-bg').style.backgroundImage = "url('" + coverUrl(res.mainCover, 2048) + "')";
+  if (res.mainCover) document.querySelector('.hero-bg').style.backgroundImage = "url('" + coverUrl(res.mainCover, heroWidth()) + "')";
 
   document.getElementById('heroTitle').textContent = 'THÉO FAZ ' + latest;
   document.getElementById('heroYear').textContent = partyYear(latest);
@@ -260,10 +269,11 @@ async function init() {
   } catch (e) {}
 }
 (async () => {
+  const bootP = apiBoot(); // dispara junto com a checagem de sessão (paralelo)
   const u = await requireAuth();
   if (!u) return;
   buildNav('inicio', u);
-  init();
+  init(bootP);
 })();
 </script>
 </body>

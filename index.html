@@ -39,7 +39,7 @@ requireAuth().then((u) => { if (!u) return; document.body.classList.add('auth-ok
 
 // capa principal personalizada (escolhida pela família no painel)
 apiYears().then((res) => {
-  if (res.mainCover) document.querySelector('.gate-bg').style.backgroundImage = "url('" + coverUrl(res.mainCover, 2048) + "')";
+  if (res.mainCover) document.querySelector('.gate-bg').style.backgroundImage = "url('" + coverUrl(res.mainCover, heroWidth()) + "')";
 }).catch(() => {});
 
 const params = new URLSearchParams(location.search);

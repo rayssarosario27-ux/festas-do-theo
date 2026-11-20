@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Sem internet • Festas do Théo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/theo-photo.css">
+<meta name="theme-color" content="#141414">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+</head>
+<body class="gate">
+<div class="gate-bg theo-photo-bg"></div>
+<div class="gate-shade"></div>
+
+<div class="off-wrap">
+  <div class="off-card">
+    <div class="off-icon">
+      <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#e50914" stroke-width="1.8" stroke-linecap="round">
+        <path d="M5 12.9a10 10 0 0 1 14 0M8.5 16.4a5.5 5.5 0 0 1 7 0M2 9.3a14.5 14.5 0 0 1 20 0"/>
+        <circle cx="12" cy="19.6" r="1.3" fill="#e50914" stroke="none"/>
+        <path d="M3 3l18 18" stroke="#fff"/>
+      </svg>
+    </div>
+    <p class="kick" style="color:var(--red);letter-spacing:.3em;font-size:11px;font-weight:700">FESTAS DO THÉO</p>
+    <h1>SEM INTERNET</h1>
+    <p>Você precisa estar conectado à internet para ver as fotos e os vídeos do Théo. Assim que a conexão voltar, é só tentar de novo.</p>
+    <button class="btn off-btn" id="tryAgain">Tentar de novo</button>
+  </div>
+</div>
+
+<script>
+document.getElementById('tryAgain').addEventListener('click', () => {
+  if (navigator.onLine) { location.href = 'catalogo.html'; return; }
+  const b = document.getElementById('tryAgain');
+  b.textContent = 'Ainda sem conexão...';
+  setTimeout(() => { b.textContent = 'Tentar de novo'; }, 1800);
+});
+window.addEventListener('online', () => { location.href = 'catalogo.html'; });
+</script>
+</body>
+</html>

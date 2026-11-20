@@ -112,7 +112,7 @@ function tickCd() {
 
 function applyYear(Y, mainCover) {
   const cover = Y.coverFileId || mainCover || '';
-  if (cover) document.querySelector('.hero-bg').style.backgroundImage = "url('" + coverUrl(cover, 2048) + "')";
+  if (cover) document.querySelector('.hero-bg').style.backgroundImage = "url('" + coverUrl(cover, heroWidth()) + "')";
   document.title = 'Théo: ' + Y.num + ' anos • Festas do Théo';
   document.getElementById('title').textContent = 'THÉO: ' + Y.num + ' ANOS';
   if (Y.theme) document.getElementById('metaTheme').textContent = Y.theme;
@@ -237,8 +237,17 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowRight') stepLb(1);
 });
 
-async function init() {
-  const res = await apiYears();
+async function init(bootP) {
+  let res = null;
+  try {
+    const b = await bootP;
+    if (b && b.ok && b.years) {
+      const merged = Object.assign({}, YEARS);
+      Object.keys(b.years).forEach((k) => { merged[k] = Object.assign({}, YEARS[k] || {}, b.years[k]); });
+      res = { years: merged, mainCover: b.mainCover || '' };
+    }
+  } catch (e) {}
+  if (!res) res = await apiYears();
   const cfg = res.years;
   applyYear(cfg[ano] || YEARS[ano] || YEARS['4'], res.mainCover);
 
@@ -281,10 +290,11 @@ function renderGaleria(data) {
   document.getElementById('btnVideos').style.display = videos.length ? '' : 'none';
 }
 (async () => {
+  const bootP = apiBoot();
   const u = await requireAuth();
   if (!u) return;
   buildNav('aniversarios', u);
-  init();
+  init(bootP);
 })();
 </script>
 </body>

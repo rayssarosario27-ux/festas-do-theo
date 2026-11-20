@@ -4,21 +4,76 @@ const AUTH_NAME_KEY = 'theo_name';
 
 function authToken() { return localStorage.getItem(AUTH_TOKEN_KEY) || ''; }
 
+// Sessão com cache SWR (2 min): trocas de página não esperam a API.
+// O cache serve na hora e a sessão revalida em segundo plano;
+// se a API rejeitar (bloqueada/excluída/expirada), limpa tudo e manda pro login.
+const AUTH_SESS_KEY = 'theo_sess';
+const AUTH_SESS_TTL = 2 * 60 * 1000;
+
+function authSessCache() {
+  try {
+    const o = JSON.parse(localStorage.getItem(AUTH_SESS_KEY));
+    if (o && Date.now() - o.t < AUTH_SESS_TTL && o.v && o.v.status) return o.v;
+  } catch (e) {}
+  return null;
+}
+
 async function authSession() {
   const t = authToken();
   if (!t) return null;
   try {
     const r = await apiPost({ action: 'sessao', token: t });
-    if (r.ok) { localStorage.setItem(AUTH_NAME_KEY, r.name || ''); return r; }
+    if (r.ok) {
+      localStorage.setItem(AUTH_NAME_KEY, r.name || '');
+      try { localStorage.setItem(AUTH_SESS_KEY, JSON.stringify({ t: Date.now(), v: r })); } catch (e) {}
+      return r;
+    }
   } catch (e) {}
   return null;
 }
+
+// Revalida a sessão contra a API; se rejeitada, limpa e redireciona.
+function authRevalidate() {
+  const t = authToken();
+  if (!t) return;
+  apiPost({ action: 'sessao', token: t }).then((r) => {
+    if (r && r.ok) {
+      try { localStorage.setItem(AUTH_SESS_KEY, JSON.stringify({ t: Date.now(), v: r })); } catch (e) {}
+      if (r.status === 'BLOQUEADO') { authClearLocal(); location.replace('conta.html?bloqueado=1'); }
+    } else {
+      authClearLocal();
+      location.replace('conta.html');
+    }
+  }).catch(() => {});
+}
+
+// Presença: avisa o backend a cada 60s enquanto a página estiver aberta.
+(function heartbeat() {
+  if (typeof apiPost !== 'function') return;
+  const beat = () => {
+    const t = authToken();
+    if (!t || document.hidden) return;
+    apiPost({ action: 'heartbeat', token: t }).then((r) => {
+      if (r && r.ok === false) { authClearLocal(); location.replace('conta.html'); }
+    }).catch(() => {});
+  };
+  window.addEventListener('load', () => {
+    setTimeout(beat, 1500);
+    setInterval(beat, 60000);
+  });
+})();
+
+// Recado de offline: sem internet, mostra a página bonita de conexão.
+window.addEventListener('offline', () => {
+  if (!/offline\.html$/.test(location.pathname)) location.href = 'offline.html';
+});
 
 // Limpa tudo que é da sessão: token, nome e TODO o cache local (theo_c_*).
 // Cache protegido nunca sobrevive a um logout ou a uma sessão rejeitada.
 function authClearLocal() {
   localStorage.removeItem(AUTH_TOKEN_KEY);
   localStorage.removeItem(AUTH_NAME_KEY);
+  localStorage.removeItem('theo_sess');
   try { if (typeof apiCacheClear === 'function') apiCacheClear(); } catch (e) {}
 }
 
@@ -35,6 +90,10 @@ async function requireAuth() {
   if (API_URL === 'PENDING_DEPLOY') return { name: 'família', status: 'APROVADO' };
   const t = authToken();
   if (!t) { authClearLocal(); location.replace('conta.html'); return null; }
+  // caminho rápido: sessão em cache (<2min) libera a página sem esperar a API
+  const cached = authSessCache();
+  if (cached && cached.status === 'APROVADO') { authRevalidate(); return cached; }
+  if (cached && (cached.status === 'PENDENTE' || cached.status === 'VERIFICAR')) { authRevalidate(); location.replace('aguardando.html'); return null; }
   const s = await authSession();
   if (!s) { authClearLocal(); location.replace('conta.html'); return null; }
   if (s.status === 'PENDENTE' || s.status === 'VERIFICAR') { authClearLocal(); location.replace('aguardando.html'); return null; }

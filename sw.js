@@ -2,7 +2,7 @@
 // Cacheia só os arquivos estáticos do próprio site.
 // NUNCA cacheia a API (script.google.com) nem mídia (drive.google.com):
 // esses pedidos vão sempre direto para a rede.
-const CACHE = 'festas-theo-v2';
+const CACHE = 'festas-theo-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -13,6 +13,7 @@ const ASSETS = [
   './ano.html',
   './conta.html',
   './aguardando.html',
+  './offline.html',
   './admin.html',
   './assets/style.css',
   './assets/api.js',
@@ -47,7 +48,7 @@ self.addEventListener('fetch', (e) => {
           caches.open(CACHE).then((c) => c.put(e.request, copy));
           return res;
         })
-        .catch(() => caches.match(e.request))
+        .catch(() => caches.match(e.request).then((hit) => hit || caches.match('./offline.html')))
     );
     return;
   }

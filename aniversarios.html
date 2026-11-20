@@ -86,8 +86,17 @@ function posterSoon(n) {
   return d;
 }
 
-async function init() {
-  const res = await apiYears();
+async function init(bootP) {
+  let res = null;
+  try {
+    const b = await bootP;
+    if (b && b.ok && b.years) {
+      const merged = Object.assign({}, YEARS);
+      Object.keys(b.years).forEach((k) => { merged[k] = Object.assign({}, YEARS[k] || {}, b.years[k]); });
+      res = { years: merged, mainCover: b.mainCover || '' };
+    }
+  } catch (e) {}
+  if (!res) res = await apiYears();
   const cfg = res.years;
   const nums = Object.keys(cfg).map(Number).filter((n) => !isNaN(n)).sort((a, b) => a - b);
   const latest = nums.length ? nums[nums.length - 1] : 4;
@@ -97,10 +106,11 @@ async function init() {
 }
 
 (async () => {
+  const bootP = apiBoot(); // paralelo com a sessão
   const u = await requireAuth();
   if (!u) return;
   buildNav('aniversarios', u);
-  init();
+  init(bootP);
 })();
 </script>
 </body>
